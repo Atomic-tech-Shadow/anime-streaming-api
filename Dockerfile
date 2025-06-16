@@ -24,10 +24,15 @@ COPY . .
 
 # Créer le répertoire de distribution et compiler TypeScript
 RUN mkdir -p dist && \
-    tsc --project tsconfig.prod.json
+    tsc --project tsconfig.prod.json && \
+    cp package.prod.json dist/package.json
 
-# Nettoyer les devDependencies pour réduire la taille
-RUN npm prune --production
+# Installer uniquement les dépendances de production dans dist
+WORKDIR /app/dist
+RUN npm install --production --no-package-lock
+
+# Retourner au répertoire principal
+WORKDIR /app
 
 # Exposer le port
 EXPOSE $PORT
@@ -37,4 +42,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:$PORT/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Démarrer l'application
-CMD ["node", "dist/server/index.js"]
+WORKDIR /app/dist
+CMD ["node", "server/index.js"]
