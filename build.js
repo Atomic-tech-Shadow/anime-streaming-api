@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 console.log('🔨 Construction pour Render...');
 
 // Vérifier que TypeScript est compilé
 try {
   console.log('📝 Compilation TypeScript...');
-  execSync('npx tsc', { stdio: 'inherit' });
+  execSync('npx tsc -p tsconfig.build.json', { stdio: 'inherit' });
 } catch (error) {
   console.error('❌ Erreur de compilation TypeScript');
   process.exit(1);
@@ -24,8 +24,7 @@ try {
     fs.mkdirSync('dist/api', { recursive: true });
   }
   
-  // Copier récursivement le dossier api compilé
-  execSync('cp -r api/* dist/api/', { stdio: 'inherit' });
+  // Les fichiers sont déjà compilés dans dist/ par TypeScript
   
   console.log('✅ Build terminé avec succès!');
 } catch (error) {

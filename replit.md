@@ -121,6 +121,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 
 - June 15, 2025. Initial setup
 - June 15, 2025. Configuration complète de déploiement Vercel optimisé avec headers de sécurité, régions multiples, CI/CD et monitoring automatique
+- June 16, 2025. Migration complète vers Replit avec configuration de déploiement Render (render.yaml, Dockerfile, scripts de build)
 
 ## User Preferences
 
