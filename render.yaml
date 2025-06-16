@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: anime-sama-api
+    env: node
+    region: frankfurt  # Europe region for better performance
+    plan: starter  # Free tier, upgrade to standard if needed
+    buildCommand: npm install && node build.js
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CACHE_TTL
+        value: 300000
+      - key: RATE_LIMIT_MAX
+        value: 150
+      - key: RATE_LIMIT_WINDOW
+        value: 60000
+      - key: REQUEST_TIMEOUT
+        value: 20000
+      - key: MAX_RETRY_ATTEMPTS
+        value: 3
+      - key: CACHE_ENABLED
+        value: true
+      - key: AD_BLOCKING_ENABLED
+        value: true
+      - key: PASSIVE_AUTH_ENABLED
+        value: true
+      - key: SESSION_ROTATION_INTERVAL
+        value: 1800000
+      - key: MAX_REQUESTS_PER_SESSION
+        value: 50
+    healthCheckPath: /api/health
+    autoDeploy: true
