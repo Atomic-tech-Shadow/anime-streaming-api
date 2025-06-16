@@ -18,7 +18,7 @@ RUN npm ci
 COPY . .
 
 # Créer le répertoire de distribution et compiler TypeScript
-RUN mkdir -p dist && npx tsc --project . --outDir dist && cp -r api dist/
+RUN mkdir -p dist && npx tsc --project tsconfig.prod.json
 
 # Exposer le port
 EXPOSE $PORT
