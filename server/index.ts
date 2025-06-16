@@ -1,0 +1,169 @@
+import { createServer } from 'http';
+import { parse } from 'url';
+import dotenv from 'dotenv';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+// Charger les variables d'environnement
+dotenv.config();
+
+const PORT = process.env.PORT || 5000;
+
+// Fonction pour adapter les requêtes au format Vercel
+function adaptRequest(req: any): VercelRequest {
+  const url = parse(req.url || '', true);
+  return {
+    ...req,
+    query: url.query || {},
+    body: null,
+    cookies: {},
+    headers: req.headers || {}
+  } as VercelRequest;
+}
+
+// Fonction pour adapter les réponses au format Vercel
+function adaptResponse(res: any): VercelResponse {
+  const vercelRes = {
+    status: (code: number) => {
+      res.statusCode = code;
+      return {
+        json: (data: any) => {
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(data));
+          return vercelRes;
+        },
+        send: (data: any) => {
+          res.end(data);
+          return vercelRes;
+        }
+      };
+    },
+    json: (data: any) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify(data));
+      return vercelRes;
+    },
+    send: (data: any) => {
+      res.end(data);
+      return vercelRes;
+    },
+    setHeader: (name: string, value: string) => {
+      res.setHeader(name, value);
+      return vercelRes;
+    },
+    end: (data?: any) => {
+      res.end(data);
+      return vercelRes;
+    }
+  } as VercelResponse;
+
+  return vercelRes;
+}
+
+const server = createServer(async (req, res) => {
+  // Configuration CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 200;
+    res.end();
+    return;
+  }
+
+  const url = parse(req.url || '', true);
+  const pathname = url.pathname || '';
+
+  console.log(`${req.method} ${pathname}`);
+
+  try {
+    const vercelReq = adaptRequest(req);
+    const vercelRes = adaptResponse(res);
+
+    // Router pour les différentes endpoints
+    if (pathname === '/api/health') {
+      const { default: handler } = await import('../api/health.js');
+      await handler(vercelReq, vercelRes);
+    } 
+    else if (pathname === '/api/status') {
+      const { default: handler } = await import('../api/status.js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname === '/api/search') {
+      const { default: handler } = await import('../api/search.js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname.startsWith('/api/anime/')) {
+      const id = pathname.split('/')[3];
+      vercelReq.query = { ...vercelReq.query, id };
+      const { default: handler } = await import('../api/anime/[id].js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname.startsWith('/api/episode/')) {
+      const id = pathname.split('/')[3];
+      vercelReq.query = { ...vercelReq.query, id };
+      const { default: handler } = await import('../api/episode/[id].js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname === '/api/trending') {
+      const { default: handler } = await import('../api/trending.js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname === '/api/catalogue') {
+      const { default: handler } = await import('../api/catalogue.js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname === '/api/genres') {
+      const { default: handler } = await import('../api/genres.js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname === '/api/random') {
+      const { default: handler } = await import('../api/random.js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname === '/api/advanced-search') {
+      const { default: handler } = await import('../api/advanced-search.js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname === '/docs') {
+      const { default: handler } = await import('../api/docs.js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname === '/' || pathname === '/api') {
+      const { default: handler } = await import('../api/index.js');
+      await handler(vercelReq, vercelRes);
+    }
+    else {
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: 'Not Found', path: pathname }));
+    }
+  } catch (error: any) {
+    console.error('Erreur serveur:', error);
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ 
+      error: 'Internal Server Error', 
+      message: error.message,
+      path: pathname
+    }));
+  }
+});
+
+server.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
+  console.log(`🚀 API Anime Sama démarrée sur http://0.0.0.0:${PORT}`);
+  console.log(`📚 Documentation: http://0.0.0.0:${PORT}/docs`);
+  console.log(`🔍 Test: http://0.0.0.0:${PORT}/api/health`);
+});
+
+// Gestion propre de l'arrêt
+process.on('SIGTERM', () => {
+  console.log('Arrêt du serveur...');
+  server.close();
+});
+
+process.on('SIGINT', () => {
+  console.log('Arrêt du serveur...');
+  server.close();
+  process.exit(0);
+});

@@ -1,0 +1,185 @@
+
+{
+  "version": 2,
+  "name": "anime-sama-api",
+  "framework": null,
+  "regions": ["cdg1", "fra1", "iad1"],
+  "functions": {
+    "api/index.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 1024,
+      "maxDuration": 60
+    },
+    "api/search.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 512,
+      "maxDuration": 45
+    },
+    "api/anime/[id].ts": {
+      "runtime": "nodejs20.x",
+      "memory": 512,
+      "maxDuration": 45
+    },
+    "api/episode/[id].ts": {
+      "runtime": "nodejs20.x",
+      "memory": 512,
+      "maxDuration": 45
+    },
+    "api/trending.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 512,
+      "maxDuration": 30
+    },
+    "api/catalogue.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 512,
+      "maxDuration": 30
+    },
+    "api/genres.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 256,
+      "maxDuration": 20
+    },
+    "api/random.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 256,
+      "maxDuration": 20
+    },
+    "api/scan/[id].ts": {
+      "runtime": "nodejs20.x",
+      "memory": 512,
+      "maxDuration": 30
+    },
+    "api/advanced-search.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 512,
+      "maxDuration": 30
+    },
+    "api/status.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 256,
+      "maxDuration": 10
+    },
+    "api/health.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 256,
+      "maxDuration": 10
+    },
+    "api/docs.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 256,
+      "maxDuration": 10
+    },
+    "api/seasons.ts": {
+      "runtime": "nodejs20.x",
+      "memory": 512,
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/search/advanced",
+      "destination": "/api/advanced-search"
+    },
+    {
+      "source": "/api/anime/:id/season/:season/episodes",
+      "destination": "/api/anime/:id?season=:season"
+    },
+    {
+      "source": "/api/anime/:id/seasons",
+      "destination": "/api/seasons?anime=:id"
+    },
+    {
+      "source": "/docs",
+      "destination": "/api/docs"
+    },
+    {
+      "source": "/documentation",
+      "destination": "/api/docs"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/api/index"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/api/index",
+      "statusCode": 200
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "SESSION_SECRET": "@session_secret",
+    "CACHE_TTL": "300000",
+    "RATE_LIMIT_MAX": "150",
+    "RATE_LIMIT_WINDOW": "60000",
+    "REQUEST_TIMEOUT": "25000",
+    "MAX_RETRY_ATTEMPTS": "3",
+    "CACHE_ENABLED": "true",
+    "AD_BLOCKING_ENABLED": "true",
+    "PASSIVE_AUTH_ENABLED": "true",
+    "SESSION_ROTATION_INTERVAL": "1800000",
+    "MAX_REQUESTS_PER_SESSION": "100",
+    "UA_LIST": "Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36,Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36,Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36,Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1,Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS, HEAD"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-Requested-With, Content-Type, Authorization, Accept, Origin, User-Agent"
+        },
+        {
+          "key": "Access-Control-Max-Age",
+          "value": "86400"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=300, stale-while-revalidate=60"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Powered-By",
+          "value": "Anime-Sama API v1.0"
+        }
+      ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/health",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
