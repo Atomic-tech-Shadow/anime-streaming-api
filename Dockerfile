@@ -11,14 +11,14 @@ WORKDIR /app
 # Copier les fichiers de dépendances
 COPY package*.json ./
 
-# Installer les dépendances
-RUN npm ci --omit=dev
+# Installer toutes les dépendances (nécessaire pour la construction)
+RUN npm ci
 
 # Copier le code source
 COPY . .
 
-# Construire l'application
-RUN npm run build
+# Créer le répertoire de distribution et compiler TypeScript
+RUN mkdir -p dist && npx tsc --project . --outDir dist && cp -r api dist/
 
 # Exposer le port
 EXPOSE $PORT
@@ -28,4 +28,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:$PORT/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Démarrer l'application
-CMD ["npm", "start"]
+CMD ["node", "dist/server/index.js"]
