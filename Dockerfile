@@ -8,17 +8,26 @@ ENV PORT=10000
 # Répertoire de travail
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY package*.json ./
+# Installer les outils de build nécessaires
+RUN apk add --no-cache python3 make g++
 
-# Installer toutes les dépendances (nécessaire pour la construction)
-RUN npm ci
+# Copier package.json seulement
+COPY package.json ./
+
+# Nettoyer npm cache et installer les dépendances
+RUN npm cache clean --force && \
+    npm install --no-package-lock --production=false && \
+    npm install -g typescript
 
 # Copier le code source
 COPY . .
 
 # Créer le répertoire de distribution et compiler TypeScript
-RUN mkdir -p dist && npx tsc --project tsconfig.prod.json
+RUN mkdir -p dist && \
+    tsc --project tsconfig.prod.json
+
+# Nettoyer les devDependencies pour réduire la taille
+RUN npm prune --production
 
 # Exposer le port
 EXPOSE $PORT
