@@ -60,7 +60,7 @@ GET /api/search?query={titre}&page={numéro}
 
 **Exemple:**
 ```bash
-curl "http://localhost:5000/api/search?query=one%20piece"
+curl "https://api-anime-sama.onrender.com/api/search?query=one%20piece"
 ```
 
 ### 📖 Détails d'un anime
@@ -70,7 +70,7 @@ GET /api/anime/{id}
 
 **Exemple:**
 ```bash
-curl "http://localhost:5000/api/anime/one-piece"
+curl "https://api-anime-sama.onrender.com/api/anime/one-piece"
 ```
 
 ### 🎬 Streaming d'un épisode
@@ -80,7 +80,7 @@ GET /api/episode/{episodeId}
 
 **Exemple:**
 ```bash
-curl "http://localhost:5000/api/episode/one-piece-1"
+curl "https://api-anime-sama.onrender.com/api/episode/one-piece-1"
 ```
 
 **Réponse exemple:**
