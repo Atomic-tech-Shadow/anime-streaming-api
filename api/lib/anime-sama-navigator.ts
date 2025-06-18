@@ -575,83 +575,250 @@ export class AnimeSamaNavigator {
 
   private extractSeasons($: cheerio.CheerioAPI, animeId: string): NavigatorSeason[] {
     const seasons: NavigatorSeason[] = [];
-    
-    // Extraire les saisons depuis les appels panneauAnime() dans le HTML
     const pageHtml = $.html();
-    const panneauAnimeRegex = /panneauAnime\("([^"]+)",\s*"saison(\d+)\/([^"]+)"\);?/g;
-    let match;
     
-    while ((match = panneauAnimeRegex.exec(pageHtml)) !== null) {
-      const seasonName = match[1];
-      const seasonNumber = parseInt(match[2]);
-      const languagePath = match[3];
-      
-      // Déterminer les langues disponibles
-      const languages: ('VF' | 'VOSTFR')[] = [];
-      if (languagePath.includes('vf') || languagePath.includes('VF')) {
-        languages.push('VF');
-      }
-      if (languagePath.includes('vostfr') || languagePath.includes('VOSTFR')) {
-        languages.push('VOSTFR');
-      }
-      
-      // Si aucune langue détectée, ajouter les deux par défaut
-      if (languages.length === 0) {
-        languages.push('VF', 'VOSTFR');
-      }
-      
-      seasons.push({
-        number: seasonNumber,
-        name: seasonName,
-        languages,
-        episodeCount: 24, // Sera mis à jour lors de la récupération des épisodes
-        url: `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}`
-      });
-    }
+    // 1. Extraire depuis les appels panneauAnime() - structure exacte d'anime-sama.fr
+    const panneauAnimePatterns = [
+      /panneauAnime\("([^"]+)",\s*"saison(\d+)\/([^"]+)"\)/g,
+      /panneauAnime\("([^"]+)",\s*"([^\/]+)\/([^"]+)"\)/g,
+      /panneauAnime\("([^"]+)",\s*"film\/([^"]+)"\)/g,
+      /panneauAnime\("([^"]+)",\s*"ova\/([^"]+)"\)/g
+    ];
     
-    // Si aucune saison trouvée via panneauAnime, chercher dans le DOM
-    if (seasons.length === 0) {
-      $('.season-selector, .season-tab, .season-button, [onclick*="panneauAnime"]').each((index, element) => {
-        const $element = $(element);
-        const seasonText = $element.text().trim();
-        const onclickAttr = $element.attr('onclick') || '';
+    for (const regex of panneauAnimePatterns) {
+      let match;
+      while ((match = regex.exec(pageHtml)) !== null) {
+        const seasonName = match[1];
+        let seasonNumber = 1;
+        let sectionType = 'saison';
         
-        // Extraire le numéro de saison depuis onclick ou index
-        let seasonNumber = index + 1;
-        const seasonMatch = onclickAttr.match(/saison(\d+)/);
-        if (seasonMatch) {
-          seasonNumber = parseInt(seasonMatch[1]);
+        // Analyser le type de section
+        if (match[0].includes('film/')) {
+          sectionType = 'film';
+          seasonNumber = 999; // Numéro spécial pour les films
+        } else if (match[0].includes('ova/')) {
+          sectionType = 'ova';
+          seasonNumber = 998; // Numéro spécial pour les OVA
+        } else if (match[2] && !isNaN(parseInt(match[2]))) {
+          seasonNumber = parseInt(match[2]);
         }
         
-        if (seasonText) {
+        const languagePath = match[3] || match[2];
+        
+        // Déterminer les langues disponibles
+        const languages: ('VF' | 'VOSTFR')[] = [];
+        if (languagePath.includes('vf') || languagePath.includes('VF')) {
+          languages.push('VF');
+        }
+        if (languagePath.includes('vostfr') || languagePath.includes('VOSTFR')) {
+          languages.push('VOSTFR');
+        }
+        
+        // Si aucune langue détectée, ajouter les deux par défaut
+        if (languages.length === 0) {
+          languages.push('VF', 'VOSTFR');
+        }
+        
+        seasons.push({
+          number: seasonNumber,
+          name: seasonName,
+          languages,
+          episodeCount: 0, // Sera déterminé dynamiquement
+          url: `${this.baseUrl}/catalogue/${animeId}/${sectionType}${seasonNumber === 999 || seasonNumber === 998 ? '' : seasonNumber}`
+        });
+      }
+    }
+    
+    // 2. Recherche avancée dans les boutons et liens de navigation
+    $('.navigation-button, .season-link, .section-link, [onclick*="panneauAnime"]').each((index, element) => {
+      const $element = $(element);
+      const onclickAttr = $element.attr('onclick') || '';
+      const hrefAttr = $element.attr('href') || '';
+      const textContent = $element.text().trim();
+      
+      // Extraire les informations depuis onclick
+      const onclickMatch = onclickAttr.match(/panneauAnime\("([^"]+)",\s*"([^"]+)"\)/);
+      if (onclickMatch) {
+        const sectionName = onclickMatch[1];
+        const sectionPath = onclickMatch[2];
+        
+        let seasonNumber = 1;
+        let sectionType = 'saison';
+        
+        // Analyser le chemin de section
+        if (sectionPath.includes('saison')) {
+          const seasonMatch = sectionPath.match(/saison(\d+)/);
+          if (seasonMatch) {
+            seasonNumber = parseInt(seasonMatch[1]);
+          }
+        } else if (sectionPath.includes('film')) {
+          sectionType = 'film';
+          seasonNumber = 999;
+        } else if (sectionPath.includes('ova')) {
+          sectionType = 'ova';
+          seasonNumber = 998;
+        }
+        
+        // Détecter les langues depuis le chemin
+        const languages: ('VF' | 'VOSTFR')[] = [];
+        if (sectionPath.includes('vf')) languages.push('VF');
+        if (sectionPath.includes('vostfr')) languages.push('VOSTFR');
+        if (languages.length === 0) languages.push('VF', 'VOSTFR');
+        
+        seasons.push({
+          number: seasonNumber,
+          name: sectionName,
+          languages,
+          episodeCount: 0,
+          url: `${this.baseUrl}/catalogue/${animeId}/${sectionPath.replace(/\/$/, '')}`
+        });
+      }
+    });
+    
+    // 3. Recherche dans tous les liens de navigation vers les saisons
+    $('a[href*="/catalogue/"]').each((index, element) => {
+      const $element = $(element);
+      const href = $element.attr('href') || '';
+      const linkText = $element.text().trim();
+      
+      // Vérifier si le lien correspond à cet anime
+      const linkMatch = href.match(/\/catalogue\/([^\/]+)\/(saison(\d+)|film|ova|kai|saison1hs)/);
+      if (linkMatch && linkMatch[1] === animeId) {
+        let seasonNumber = 1;
+        let sectionName = linkText;
+        
+        if (linkMatch[2] === 'film') {
+          seasonNumber = 999;
+          sectionName = 'Films';
+        } else if (linkMatch[2] === 'ova') {
+          seasonNumber = 998;
+          sectionName = 'OVA';
+        } else if (linkMatch[2] === 'kai') {
+          seasonNumber = 997;
+          sectionName = 'Kai';
+        } else if (linkMatch[2] === 'saison1hs') {
+          seasonNumber = 996;
+          sectionName = 'Saison 1 (Hors Série)';
+        } else if (linkMatch[3]) {
+          seasonNumber = parseInt(linkMatch[3]);
+          sectionName = linkText || `Saison ${seasonNumber}`;
+        }
+        
+        // Détecter les langues disponibles depuis l'URL
+        const languages: ('VF' | 'VOSTFR')[] = [];
+        if (href.includes('/vf')) languages.push('VF');
+        if (href.includes('/vostfr')) languages.push('VOSTFR');
+        if (languages.length === 0) languages.push('VF', 'VOSTFR');
+        
+        seasons.push({
+          number: seasonNumber,
+          name: sectionName,
+          languages,
+          episodeCount: 0,
+          url: `${this.baseUrl}${href.replace(/\/$/, '')}`
+        });
+      }
+    });
+    
+    // 4. Recherche dans les scripts JavaScript pour les appels panneauAnime
+    const scriptTags = $('script').get();
+    for (const script of scriptTags) {
+      const scriptContent = $(script).html() || '';
+      const panneauCalls = scriptContent.match(/panneauAnime\([^)]+\)/g) || [];
+      
+      for (const call of panneauCalls) {
+        const callMatch = call.match(/panneauAnime\("([^"]+)",\s*"([^"]+)"\)/);
+        if (callMatch) {
+          const sectionName = callMatch[1];
+          const sectionPath = callMatch[2];
+          
+          let seasonNumber = 1;
+          if (sectionPath.includes('saison')) {
+            const seasonMatch = sectionPath.match(/saison(\d+)/);
+            if (seasonMatch) seasonNumber = parseInt(seasonMatch[1]);
+          } else if (sectionPath.includes('film')) {
+            seasonNumber = 999;
+          } else if (sectionPath.includes('ova')) {
+            seasonNumber = 998;
+          }
+          
+          const languages: ('VF' | 'VOSTFR')[] = [];
+          if (sectionPath.includes('vf')) languages.push('VF');
+          if (sectionPath.includes('vostfr')) languages.push('VOSTFR');
+          if (languages.length === 0) languages.push('VF', 'VOSTFR');
+          
           seasons.push({
             number: seasonNumber,
-            name: seasonText,
+            name: sectionName,
+            languages,
+            episodeCount: 0,
+            url: `${this.baseUrl}/catalogue/${animeId}/${sectionPath.replace(/\/$/, '')}`
+          });
+        }
+      }
+    }
+    
+    // 5. Si toujours aucune saison, analyser la structure de la page plus profondément
+    if (seasons.length === 0) {
+      // Rechercher tous les éléments avec du texte contenant "saison", "film", "ova"
+      $('*').each((index, element) => {
+        const $element = $(element);
+        const elementText = $element.text().trim().toLowerCase();
+        const onclickAttr = $element.attr('onclick') || '';
+        
+        if (elementText.includes('saison') || elementText.includes('season')) {
+          const seasonMatch = elementText.match(/(?:saison|season)\s*(\d+)/);
+          if (seasonMatch) {
+            const seasonNumber = parseInt(seasonMatch[1]);
+            if (seasonNumber > 0 && seasonNumber < 20) {
+              seasons.push({
+                number: seasonNumber,
+                name: `Saison ${seasonNumber}`,
+                languages: ['VF', 'VOSTFR'],
+                episodeCount: 0,
+                url: `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}`
+              });
+            }
+          }
+        }
+        
+        if (elementText.includes('film') && elementText.length < 50) {
+          seasons.push({
+            number: 999,
+            name: 'Films',
             languages: ['VF', 'VOSTFR'],
-            episodeCount: 24,
-            url: `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}`
+            episodeCount: 0,
+            url: `${this.baseUrl}/catalogue/${animeId}/film`
+          });
+        }
+        
+        if (elementText.includes('ova') && elementText.length < 50) {
+          seasons.push({
+            number: 998,
+            name: 'OVA',
+            languages: ['VF', 'VOSTFR'],
+            episodeCount: 0,
+            url: `${this.baseUrl}/catalogue/${animeId}/ova`
           });
         }
       });
     }
     
-    // Fallback: au moins une saison par défaut
-    if (seasons.length === 0) {
-      seasons.push({
-        number: 1,
-        name: 'Saison 1',
-        languages: ['VF', 'VOSTFR'],
-        episodeCount: 24,
-        url: `${this.baseUrl}/catalogue/${animeId}/saison1`
-      });
-    }
-    
-    // Trier par numéro de saison et supprimer les doublons
-    return seasons
+    // Nettoyer et trier les saisons
+    const uniqueSeasons = seasons
       .filter((season, index, self) => 
         index === self.findIndex(s => s.number === season.number)
       )
-      .sort((a, b) => a.number - b.number);
+      .sort((a, b) => {
+        // Trier: saisons normales d'abord, puis contenus spéciaux
+        if (a.number < 900 && b.number >= 900) return -1;
+        if (a.number >= 900 && b.number < 900) return 1;
+        return a.number - b.number;
+      });
+    
+    console.log(`📺 ${uniqueSeasons.length} saison(s) détectée(s) pour ${animeId}:`, uniqueSeasons.map(s => `${s.name} (${s.languages.join(', ')})`));
+    
+    return uniqueSeasons;
   }
 
   private extractStatus($: cheerio.CheerioAPI): string {
