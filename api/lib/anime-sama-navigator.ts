@@ -533,20 +533,66 @@ export class AnimeSamaNavigator {
   private extractSeasons($: cheerio.CheerioAPI, animeId: string): NavigatorSeason[] {
     const seasons: NavigatorSeason[] = [];
     
-    $('.season-selector, .season-tab, .season-button').each((index, element) => {
-      const $element = $(element);
-      const seasonText = $element.text().trim();
-      const seasonNumber = index + 1;
+    // Extraire les saisons depuis les appels panneauAnime() dans le HTML
+    const pageHtml = $.html();
+    const panneauAnimeRegex = /panneauAnime\("([^"]+)",\s*"saison(\d+)\/([^"]+)"\);?/g;
+    let match;
+    
+    while ((match = panneauAnimeRegex.exec(pageHtml)) !== null) {
+      const seasonName = match[1];
+      const seasonNumber = parseInt(match[2]);
+      const languagePath = match[3];
+      
+      // Déterminer les langues disponibles
+      const languages: ('VF' | 'VOSTFR')[] = [];
+      if (languagePath.includes('vf') || languagePath.includes('VF')) {
+        languages.push('VF');
+      }
+      if (languagePath.includes('vostfr') || languagePath.includes('VOSTFR')) {
+        languages.push('VOSTFR');
+      }
+      
+      // Si aucune langue détectée, ajouter les deux par défaut
+      if (languages.length === 0) {
+        languages.push('VF', 'VOSTFR');
+      }
       
       seasons.push({
         number: seasonNumber,
-        name: seasonText || `Saison ${seasonNumber}`,
-        languages: ['VF', 'VOSTFR'],
-        episodeCount: 24,
+        name: seasonName,
+        languages,
+        episodeCount: 24, // Sera mis à jour lors de la récupération des épisodes
         url: `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}/`
       });
-    });
+    }
     
+    // Si aucune saison trouvée via panneauAnime, chercher dans le DOM
+    if (seasons.length === 0) {
+      $('.season-selector, .season-tab, .season-button, [onclick*="panneauAnime"]').each((index, element) => {
+        const $element = $(element);
+        const seasonText = $element.text().trim();
+        const onclickAttr = $element.attr('onclick') || '';
+        
+        // Extraire le numéro de saison depuis onclick ou index
+        let seasonNumber = index + 1;
+        const seasonMatch = onclickAttr.match(/saison(\d+)/);
+        if (seasonMatch) {
+          seasonNumber = parseInt(seasonMatch[1]);
+        }
+        
+        if (seasonText) {
+          seasons.push({
+            number: seasonNumber,
+            name: seasonText,
+            languages: ['VF', 'VOSTFR'],
+            episodeCount: 24,
+            url: `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}/`
+          });
+        }
+      });
+    }
+    
+    // Fallback: au moins une saison par défaut
     if (seasons.length === 0) {
       seasons.push({
         number: 1,
@@ -557,7 +603,12 @@ export class AnimeSamaNavigator {
       });
     }
     
-    return seasons;
+    // Trier par numéro de saison et supprimer les doublons
+    return seasons
+      .filter((season, index, self) => 
+        index === self.findIndex(s => s.number === season.number)
+      )
+      .sort((a, b) => a.number - b.number);
   }
 
   private extractStatus($: cheerio.CheerioAPI): string {
