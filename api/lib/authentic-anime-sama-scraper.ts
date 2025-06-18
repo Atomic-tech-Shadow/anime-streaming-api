@@ -239,14 +239,14 @@ export class AuthenticAnimeSamaScraper {
     
     // Structure basée sur l'analyse réelle d'anime-sama.fr
     return [
-      `/catalogue/${animeId}/saison1/${lang}/`,
-      `/catalogue/${animeId}/saison1hs/${lang}/`, // Sans fillers
-      `/catalogue/${animeId}/saison2/${lang}/`,
-      `/catalogue/${animeId}/saison3/${lang}/`,
-      `/catalogue/${animeId}/film/${lang}/`,
-      `/catalogue/${animeId}/ova/${lang}/`,
-      `/catalogue/${animeId}/kai/${lang}/`, // Version Kai (pour Dragon Ball, Naruto, etc.)
-      `/catalogue/${animeId}/${lang}/` // URL simple
+      `/catalogue/${animeId}/saison1/${lang}`,
+      `/catalogue/${animeId}/saison1hs/${lang}`, // Sans fillers
+      `/catalogue/${animeId}/saison2/${lang}`,
+      `/catalogue/${animeId}/saison3/${lang}`,
+      `/catalogue/${animeId}/film/${lang}`,
+      `/catalogue/${animeId}/ova/${lang}`,
+      `/catalogue/${animeId}/kai/${lang}`, // Version Kai (pour Dragon Ball, Naruto, etc.)
+      `/catalogue/${animeId}/${lang}` // URL simple
     ];
   }
 

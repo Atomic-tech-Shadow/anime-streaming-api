@@ -225,7 +225,7 @@ export class AnimeSamaNavigator {
     await randomDelay(600, 1000);
     
     try {
-      const seasonUrl = `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}/${language.toLowerCase()}/`;
+      const seasonUrl = `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}/${language.toLowerCase()}`;
       
       const response = await this.axiosInstance.get(seasonUrl, {
         headers: { 'Referer': `${this.baseUrl}/catalogue/${animeId}/` }
@@ -296,7 +296,7 @@ export class AnimeSamaNavigator {
         seasonNumber = parseInt(seasonFromId[1]);
       }
       
-      const seasonUrl = `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}/${language.toLowerCase()}/`;
+      const seasonUrl = `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}/${language.toLowerCase()}`;
       
       console.log(`📂 Accès saison: ${seasonUrl}`);
       
@@ -605,7 +605,7 @@ export class AnimeSamaNavigator {
         name: seasonName,
         languages,
         episodeCount: 24, // Sera mis à jour lors de la récupération des épisodes
-        url: `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}/`
+        url: `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}`
       });
     }
     
@@ -629,7 +629,7 @@ export class AnimeSamaNavigator {
             name: seasonText,
             languages: ['VF', 'VOSTFR'],
             episodeCount: 24,
-            url: `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}/`
+            url: `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}`
           });
         }
       });
@@ -642,7 +642,7 @@ export class AnimeSamaNavigator {
         name: 'Saison 1',
         languages: ['VF', 'VOSTFR'],
         episodeCount: 24,
-        url: `${this.baseUrl}/catalogue/${animeId}/saison1/`
+        url: `${this.baseUrl}/catalogue/${animeId}/saison1`
       });
     }
     
