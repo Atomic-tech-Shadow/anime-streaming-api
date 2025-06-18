@@ -125,6 +125,10 @@ const server = createServer(async (req, res) => {
       const { default: handler } = await import('../api/advanced-search.js');
       await handler(vercelReq, vercelRes);
     }
+    else if (pathname === '/api/seasons') {
+      const { default: handler } = await import('../api/seasons.js');
+      await handler(vercelReq, vercelRes);
+    }
     else if (pathname === '/docs') {
       const { default: handler } = await import('../api/docs.js');
       await handler(vercelReq, vercelRes);
