@@ -328,72 +328,82 @@ export class AnimeSamaNavigator {
           serverIndex: 1
         });
       } else {
-        // Try to extract episodes.js if the page loaded successfully
-        const episodesJsMatch = cleanedData.match(/episodes\.js\?filever=(\d+)/);
-        if (episodesJsMatch) {
-          const filever = episodesJsMatch[1];
-          const episodesJsUrl = `${workingUrl}/episodes.js?filever=${filever}`;
-          console.log(`📄 Fichier episodes.js: ${episodesJsUrl}`);
-      
-      // Récupérer le fichier episodes.js
-      const episodesResponse = await this.axiosInstance.get(episodesJsUrl, {
-        headers: { 'Referer': seasonUrl }
-      });
-      
-      const episodesData = episodesResponse.data;
-      
-      // Extraire les sources depuis les variables eps1, eps2, eps3, eps4
-      const episodeIndex = parseInt(episodeNumber) - 1; // Les arrays commencent à 0
-      
-      const serverArrays = ['eps1', 'eps2', 'eps3', 'eps4'];
-      
-      for (let serverIndex = 0; serverIndex < serverArrays.length; serverIndex++) {
-        const serverName = serverArrays[serverIndex];
-        const arrayRegex = new RegExp(`var ${serverName}\\s*=\\s*\\[(.*?)\\];`, 'gs');
-        const match = arrayRegex.exec(episodesData);
-        
-        if (match) {
-          const arrayContent = match[1];
-          const urls = this.parseJavaScriptArray(arrayContent);
-          
-          // Récupérer l'URL pour cet épisode spécifique
-          if (episodeIndex < urls.length && urls[episodeIndex]) {
-            const url = urls[episodeIndex];
+          // Try to extract episodes.js if the page loaded successfully
+          const episodesJsMatch = cleanedData.match(/episodes\.js\?filever=(\d+)/);
+          if (episodesJsMatch) {
+            const filever = episodesJsMatch[1];
+            const episodesJsUrl = `${workingUrl}/episodes.js?filever=${filever}`;
+            console.log(`📄 Fichier episodes.js: ${episodesJsUrl}`);
             
-            if (this.isValidStreamingUrl(url)) {
-              sources.push({
-                url: this.normalizeUrl(url),
-                server: this.identifyServer(url, serverIndex + 1),
-                quality: this.detectQuality(url),
-                language: language as 'VF' | 'VOSTFR',
-                type: this.determineSourceType(url),
-                serverIndex: serverIndex + 1
+            try {
+              const episodesResponse = await this.axiosInstance.get(episodesJsUrl, {
+                headers: { 'Referer': workingUrl }
               });
+              
+              const episodesData = episodesResponse.data;
+              const episodeIndex = parseInt(episodeNumber) - 1;
+              
+              const serverArrays = ['eps1', 'eps2', 'eps3', 'eps4'];
+              
+              for (let serverIndex = 0; serverIndex < serverArrays.length; serverIndex++) {
+                const serverName = serverArrays[serverIndex];
+                const arrayRegex = new RegExp(`var ${serverName}\\s*=\\s*\\[(.*?)\\];`, 'gs');
+                const match = arrayRegex.exec(episodesData);
+                
+                if (match) {
+                  const arrayContent = match[1];
+                  const urls = this.parseJavaScriptArray(arrayContent);
+                  
+                  if (episodeIndex < urls.length && urls[episodeIndex]) {
+                    const url = urls[episodeIndex];
+                    
+                    if (this.isValidStreamingUrl(url)) {
+                      sources.push({
+                        url: this.normalizeUrl(url),
+                        server: this.identifyServer(url, serverIndex + 1),
+                        quality: this.detectQuality(url),
+                        language: language.toUpperCase() as 'VF' | 'VOSTFR',
+                        type: this.determineSourceType(url),
+                        serverIndex: serverIndex + 1
+                      });
+                    }
+                  }
+                }
+              }
+            } catch (jsError) {
+              console.log('Impossible de récupérer episodes.js');
             }
           }
         }
+        
+        console.log(`✅ ${sources.length} sources extraites`);
+        
+        return {
+          id: episodeId,
+          title: `Épisode ${episodeNumber}`,
+          animeTitle: animeId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+          episodeNumber: parseInt(episodeNumber),
+          language: language.toUpperCase() as 'VF' | 'VOSTFR',
+          sources,
+          availableServers: Array.from(new Set(sources.map(s => s.server))),
+          url: workingUrl || `${this.baseUrl}/catalogue/${animeId}/`
+        };
+        
+      } catch (error) {
+        console.error(`Erreur épisode ${episodeId}:`, error);
+        
+        // Return basic structure with no sources found message
+        return {
+          id: episodeId,
+          title: `Épisode ${episodeNumber}`,
+          animeTitle: animeId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+          episodeNumber: parseInt(episodeNumber),
+          language: language.toUpperCase() as 'VF' | 'VOSTFR',
+          sources: [],
+          availableServers: [],
+          url: `${this.baseUrl}/catalogue/${animeId}/`
+        };
       }
-      
-      console.log(`✅ ${sources.length} sources authentiques extraites`);
-      
-      if (sources.length === 0) {
-        throw new Error(`Aucune source trouvée pour l'épisode ${episodeNumber}`);
-      }
-      
-      return {
-        id: episodeId,
-        title: `Épisode ${episodeNumber}`,
-        animeTitle: animeId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-        episodeNumber: parseInt(episodeNumber),
-        sources: filterUniqueSources(sources),
-        availableServers: Array.from(new Set(sources.map(s => s.server))),
-        url: seasonUrl + `episode-${episodeNumber}`
-      };
-      
-    } catch (error) {
-      console.error(`Erreur épisode ${episodeId}:`, error);
-      throw error;
-    }
   }
 
   /**
