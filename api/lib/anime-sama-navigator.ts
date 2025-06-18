@@ -280,44 +280,87 @@ export class AnimeSamaNavigator {
     
     const { animeId, episodeNumber, language } = this.parseEpisodeId(episodeId);
     
-    await randomDelay(1000, 1800);
+    await randomDelay(800, 1200);
     
     const sources: NavigatorStreamingSource[] = [];
     
     try {
-      const possibleUrls = this.buildEpisodeUrls(animeId, episodeNumber, language);
+      // Construire l'URL de la saison pour accéder au fichier episodes.js
+      const seasonMatch = episodeId.match(/-episode-(\d+)-/);
+      if (!seasonMatch) throw new Error('Format episodeId invalide');
       
-      for (const episodeUrl of possibleUrls) {
-        try {
-          console.log(`🎯 Test: ${episodeUrl}`);
+      // Déterminer la saison depuis l'animeId ou utiliser 1 par défaut
+      let seasonNumber = 1;
+      const seasonFromId = episodeId.match(/-saison(\d+)-/);
+      if (seasonFromId) {
+        seasonNumber = parseInt(seasonFromId[1]);
+      }
+      
+      const seasonUrl = `${this.baseUrl}/catalogue/${animeId}/saison${seasonNumber}/${language.toLowerCase()}/`;
+      
+      console.log(`📂 Accès saison: ${seasonUrl}`);
+      
+      // Récupérer la page de la saison pour obtenir le lien vers episodes.js
+      const seasonResponse = await this.axiosInstance.get(seasonUrl, {
+        headers: { 'Referer': `${this.baseUrl}/catalogue/${animeId}/` }
+      });
+      
+      const cleanedData = cleanPageContent(seasonResponse.data);
+      
+      // Extraire l'URL du fichier episodes.js
+      const episodesJsMatch = cleanedData.match(/episodes\.js\?filever=(\d+)/);
+      if (!episodesJsMatch) {
+        throw new Error('Fichier episodes.js non trouvé');
+      }
+      
+      const filever = episodesJsMatch[1];
+      const episodesJsUrl = `${seasonUrl}episodes.js?filever=${filever}`;
+      
+      console.log(`📄 Fichier episodes.js: ${episodesJsUrl}`);
+      
+      // Récupérer le fichier episodes.js
+      const episodesResponse = await this.axiosInstance.get(episodesJsUrl, {
+        headers: { 'Referer': seasonUrl }
+      });
+      
+      const episodesData = episodesResponse.data;
+      
+      // Extraire les sources depuis les variables eps1, eps2, eps3, eps4
+      const episodeIndex = parseInt(episodeNumber) - 1; // Les arrays commencent à 0
+      
+      const serverArrays = ['eps1', 'eps2', 'eps3', 'eps4'];
+      
+      for (let serverIndex = 0; serverIndex < serverArrays.length; serverIndex++) {
+        const serverName = serverArrays[serverIndex];
+        const arrayRegex = new RegExp(`var ${serverName}\\s*=\\s*\\[(.*?)\\];`, 'gs');
+        const match = arrayRegex.exec(episodesData);
+        
+        if (match) {
+          const arrayContent = match[1];
+          const urls = this.parseJavaScriptArray(arrayContent);
           
-          const response = await this.axiosInstance.get(episodeUrl, {
-            headers: { 'Referer': `${this.baseUrl}/catalogue/${animeId}/` }
-          });
-          
-          const cleanedData = cleanPageContent(response.data);
-          const $ = cheerio.load(cleanedData);
-          
-          // Attendre le chargement complet de la page
-          await randomDelay(1200, 2000);
-          
-          // Extraire les sources de streaming
-          await this.extractAllStreamingSources($, language as 'VF' | 'VOSTFR', sources, episodeUrl, cleanedData);
-          
-          if (sources.length > 0) {
-            console.log(`✅ ${sources.length} sources trouvées`);
-            break;
+          // Récupérer l'URL pour cet épisode spécifique
+          if (episodeIndex < urls.length && urls[episodeIndex]) {
+            const url = urls[episodeIndex];
+            
+            if (this.isValidStreamingUrl(url)) {
+              sources.push({
+                url: this.normalizeUrl(url),
+                server: this.identifyServer(url, serverIndex + 1),
+                quality: this.detectQuality(url),
+                language: language as 'VF' | 'VOSTFR',
+                type: this.determineSourceType(url),
+                serverIndex: serverIndex + 1
+              });
+            }
           }
-          
-        } catch (error) {
-          console.log(`❌ Échec: ${episodeUrl}`);
-          continue;
         }
       }
       
-      // Ajouter sources de fallback si nécessaire
+      console.log(`✅ ${sources.length} sources authentiques extraites`);
+      
       if (sources.length === 0) {
-        this.addFallbackSources(animeId, episodeNumber, language as 'VF' | 'VOSTFR', sources);
+        throw new Error(`Aucune source trouvée pour l'épisode ${episodeNumber}`);
       }
       
       return {
@@ -327,7 +370,7 @@ export class AnimeSamaNavigator {
         episodeNumber: parseInt(episodeNumber),
         sources: filterUniqueSources(sources),
         availableServers: Array.from(new Set(sources.map(s => s.server))),
-        url: `${this.baseUrl}/catalogue/${animeId}/episode-${episodeNumber}`
+        url: seasonUrl + `episode-${episodeNumber}`
       };
       
     } catch (error) {
@@ -644,6 +687,11 @@ export class AnimeSamaNavigator {
     if (url.includes('anime-sama.fr')) return 'Anime-Sama';
     if (url.includes('mystream')) return 'MyStream';
     if (url.includes('uptostream')) return 'UptoStream';
+    if (url.includes('smoothpre.com')) return 'SmoothPre';
+    if (url.includes('doodstream')) return 'DoodStream';
+    if (url.includes('streamtape')) return 'StreamTape';
+    if (url.includes('mixdrop')) return 'MixDrop';
+    if (url.includes('uqload')) return 'UqLoad';
     
     return `Serveur ${serverIndex}`;
   }
@@ -672,14 +720,17 @@ export class AnimeSamaNavigator {
     
     const validDomains = [
       'vidmoly.to', 'sendvid.com', 'sibnet.ru', 'vk.com', 
-      'anime-sama.fr', 'mystream.to', 'uptostream.com'
+      'anime-sama.fr', 'mystream.to', 'uptostream.com',
+      'smoothpre.com', 'doodstream.com', 'streamtape.com',
+      'mixdrop.co', 'uqload.com', 'streamhide.to'
     ];
     
     return validDomains.some(domain => url.includes(domain)) && 
            !url.includes('ad') && 
            !url.includes('popup') && 
            !url.includes('banner') &&
-           !url.includes('aclib');
+           !url.includes('aclib') &&
+           url.startsWith('http');
   }
 }
 
