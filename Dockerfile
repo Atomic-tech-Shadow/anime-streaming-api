@@ -16,7 +16,7 @@ COPY package.json ./
 
 # Nettoyer npm cache et installer les dépendances
 RUN npm cache clean --force && \
-    npm install --no-package-lock --production=false && \
+    npm install --no-package-lock --omit=dev=false && \
     npm install -g typescript
 
 # Copier le code source
@@ -29,7 +29,7 @@ RUN mkdir -p dist && \
 
 # Installer uniquement les dépendances de production dans dist
 WORKDIR /app/dist
-RUN npm install --production --no-package-lock
+RUN npm install --omit=dev --no-package-lock
 
 # Retourner au répertoire principal
 WORKDIR /app

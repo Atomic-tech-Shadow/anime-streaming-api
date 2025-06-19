@@ -127,6 +127,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - June 18, 2025. Fixed streaming source extraction bugs - improved episode ID parsing, added fallback mechanisms for anime-sama.fr connectivity issues
 - June 19, 2025. Added /embed/ route support for direct episode URLs, enhanced URL parsing for better streaming source extraction
 - June 19, 2025. Fixed TypeScript compilation errors for production builds by updating NavigatorEpisodeResponse interface
+- June 19, 2025. Updated Docker configuration to use modern npm flags (--omit=dev instead of deprecated --production)
 
 ## User Preferences
 
