@@ -133,6 +133,13 @@ const server = createServer(async (req, res) => {
       const { default: handler } = await import('../api/docs.js');
       await handler(vercelReq, vercelRes);
     }
+    else if (pathname.startsWith('/embed/')) {
+      // Handle embed URLs like /embed/anime-episode-1-vostfr
+      const episodeId = pathname.replace('/embed/', '');
+      vercelReq.query = { ...vercelReq.query, id: episodeId };
+      const { default: handler } = await import('../api/episode/[id].js');
+      await handler(vercelReq, vercelRes);
+    }
     else if (pathname === '/' || pathname === '/api') {
       const { default: handler } = await import('../api/index.js');
       await handler(vercelReq, vercelRes);

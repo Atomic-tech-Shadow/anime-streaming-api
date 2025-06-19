@@ -357,6 +357,13 @@ export class AnimeSamaNavigator {
                   const urls = this.parseJavaScriptArray(arrayContent);
                   console.log(`📊 ${serverName}: ${urls.length} URLs trouvées`);
                   
+                  // Si aucune URL extraite, essayer un parsing alternatif
+                  if (urls.length === 0) {
+                    const directUrls = arrayContent.match(/'([^']+)'/g) || [];
+                    urls.push(...directUrls.map(url => url.replace(/'/g, '')));
+                    console.log(`🔄 Parsing alternatif: ${urls.length} URLs`);
+                  }
+                  
                   if (episodeIndex < urls.length && urls[episodeIndex]) {
                     const url = urls[episodeIndex];
                     console.log(`🎯 URL épisode ${episodeNumber}:`, url);

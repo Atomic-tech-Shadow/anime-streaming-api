@@ -31,6 +31,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - `/api/search` - Anime search functionality
 - `/api/anime/[id]` - Detailed anime information
 - `/api/episode/[id]` - Episode streaming sources
+- `/embed/[episode-id]` - Direct embed access for episodes
 - `/api/trending` - Popular anime list
 - `/api/catalogue` - Browse anime catalog
 - `/api/genres` - Available anime genres
@@ -124,6 +125,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - June 16, 2025. Migration complète vers Replit avec configuration de déploiement Render (render.yaml, Dockerfile, scripts de build)
 - June 18, 2025. Migration successful from Replit Agent to standard Replit environment - all dependencies installed, server running on port 5000, API endpoints functional
 - June 18, 2025. Fixed streaming source extraction bugs - improved episode ID parsing, added fallback mechanisms for anime-sama.fr connectivity issues
+- June 19, 2025. Added /embed/ route support for direct episode URLs, enhanced URL parsing for better streaming source extraction
 
 ## User Preferences
 
