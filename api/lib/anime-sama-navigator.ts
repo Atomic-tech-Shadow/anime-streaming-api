@@ -36,6 +36,7 @@ export interface NavigatorEpisodeResponse {
   title: string;
   animeTitle?: string;
   episodeNumber: number;
+  language?: 'VF' | 'VOSTFR';
   sources: NavigatorStreamingSource[];
   availableServers: string[];
   url: string;
