@@ -1,7 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders } from './lib/core';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -10,380 +8,227 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  try {
-    const docsPath = join(process.cwd(), 'api', 'docs.html');
-    const docsHtml = readFileSync(docsPath, 'utf-8');
-    
-    res.setHeader('Content-Type', 'text/html');
-    return res.status(200).send(docsHtml);
-  } catch (error) {
-    console.error('Docs error:', error);
-    return res.status(500).json({
-      error: 'Documentation not available',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-}
-
-  const swaggerSpec = {
-    openapi: "3.0.0",
-    info: {
-      title: "Anime-Sama Streaming API",
-      version: "2.0.0",
-      description: "REST API for scraping anime-sama.fr with passive authentication and ad-blocking",
-      contact: {
-        name: "API Support",
-        url: "https://github.com/your-repo"
-      }
-    },
-    servers: [
-      {
-        url: "https://your-domain.vercel.app",
-        description: "Production server"
-      }
-    ],
-    paths: {
-      "/api/search": {
-        get: {
-          summary: "Search anime",
-          parameters: [
-            {
-              name: "query",
-              in: "query",
-              required: true,
-              schema: { type: "string" },
-              description: "Search query"
-            }
-          ],
-          responses: {
-            "200": {
-              description: "Search results",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: {
-                      success: { type: "boolean" },
-                      data: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            id: { type: "string" },
-                            title: { type: "string" },
-                            url: { type: "string" },
-                            image: { type: "string" },
-                            type: { type: "string" }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/api/anime/{id}": {
-        get: {
-          summary: "Get anime details",
-          parameters: [
-            {
-              name: "id",
-              in: "path",
-              required: true,
-              schema: { type: "string" },
-              description: "Anime ID"
-            }
-          ],
-          responses: {
-            "200": {
-              description: "Anime details",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: {
-                      success: { type: "boolean" },
-                      data: {
-                        type: "object",
-                        properties: {
-                          id: { type: "string" },
-                          title: { type: "string" },
-                          description: { type: "string" },
-                          image: { type: "string" },
-                          genres: { type: "array", items: { type: "string" } },
-                          status: { type: "string" },
-                          year: { type: "string" },
-                          episodes: { type: "array" },
-                          url: { type: "string" }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/api/episode/{id}": {
-        get: {
-          summary: "Get episode streaming sources",
-          parameters: [
-            {
-              name: "id",
-              in: "path",
-              required: true,
-              schema: { type: "string" },
-              description: "Episode ID (format: animeId-episode-number-language)"
-            }
-          ],
-          responses: {
-            "200": {
-              description: "Episode streaming sources",
-              content: {
-                "application/json": {
-                  schema: {
-                    type: "object",
-                    properties: {
-                      success: { type: "boolean" },
-                      data: {
-                        type: "object",
-                        properties: {
-                          id: { type: "string" },
-                          title: { type: "string" },
-                          sources: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                url: { type: "string" },
-                                server: { type: "string" },
-                                quality: { type: "string" },
-                                language: { type: "string", enum: ["VF", "VOSTFR"] },
-                                type: { type: "string", enum: ["iframe", "direct", "script"] }
-                              }
-                            }
-                          },
-                          url: { type: "string" }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "/api/trending": {
-        get: {
-          summary: "Get trending anime",
-          responses: {
-            "200": {
-              description: "Trending anime list"
-            }
-          }
-        }
-      },
-      "/api/catalogue": {
-        get: {
-          summary: "Get anime catalogue",
-          parameters: [
-            {
-              name: "page",
-              in: "query",
-              schema: { type: "integer", default: 1 },
-              description: "Page number"
-            },
-            {
-              name: "genre",
-              in: "query",
-              schema: { type: "string" },
-              description: "Filter by genre"
-            },
-            {
-              name: "status",
-              in: "query",
-              schema: { type: "string" },
-              description: "Filter by status"
-            }
-          ],
-          responses: {
-            "200": {
-              description: "Catalogue with pagination"
-            }
-          }
-        }
-      },
-      "/api/genres": {
-        get: {
-          summary: "Get available genres",
-          responses: {
-            "200": {
-              description: "List of genres"
-            }
-          }
-        }
-      },
-      "/api/random": {
-        get: {
-          summary: "Get random anime",
-          responses: {
-            "200": {
-              description: "Random anime"
-            }
-          }
-        }
-      },
-      "/api/scan/{id}": {
-        get: {
-          summary: "Get manga/scan details",
-          parameters: [
-            {
-              name: "id",
-              in: "path",
-              required: true,
-              schema: { type: "string" },
-              description: "Scan ID"
-            },
-            {
-              name: "chapter",
-              in: "query",
-              schema: { type: "string" },
-              description: "Specific chapter number"
-            }
-          ],
-          responses: {
-            "200": {
-              description: "Scan details with chapters"
-            }
-          }
-        }
-      },
-      "/api/search/advanced": {
-        get: {
-          summary: "Advanced search with filters",
-          parameters: [
-            {
-              name: "query",
-              in: "query",
-              schema: { type: "string" },
-              description: "Search query"
-            },
-            {
-              name: "genre",
-              in: "query",
-              schema: { type: "string" },
-              description: "Genre filter"
-            },
-            {
-              name: "status",
-              in: "query",
-              schema: { type: "string" },
-              description: "Status filter"
-            },
-            {
-              name: "year",
-              in: "query",
-              schema: { type: "string" },
-              description: "Year filter"
-            },
-            {
-              name: "sort",
-              in: "query",
-              schema: { type: "string", enum: ["title", "year", "rating", "relevance"], default: "title" },
-              description: "Sort field"
-            },
-            {
-              name: "order",
-              in: "query",
-              schema: { type: "string", enum: ["asc", "desc"], default: "asc" },
-              description: "Sort order"
-            }
-          ],
-          responses: {
-            "200": {
-              description: "Advanced search results"
-            }
-          }
-        }
-      },
-      "/api/status": {
-        get: {
-          summary: "API status and cache information",
-          responses: {
-            "200": {
-              description: "API status"
-            }
-          }
-        }
-      },
-      "/api/health": {
-        get: {
-          summary: "Health check",
-          responses: {
-            "200": {
-              description: "Health status"
-            }
-          }
-        }
-      }
-    },
-    components: {
-      schemas: {
-        Error: {
-          type: "object",
-          properties: {
-            error: { type: "boolean" },
-            message: { type: "string" },
-            status: { type: "integer" },
-            timestamp: { type: "string" }
-          }
-        }
-      }
-    }
-  };
-
   const html = `
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anime-Sama API Documentation</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3.52.5/swagger-ui.css" />
     <style>
-        html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
-        *, *:before, *:after { box-sizing: inherit; }
-        body { margin:0; background: #fafafa; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        h3 { color: #7f8c8d; }
+        .endpoint {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+        }
+        .method {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .get { background: #2ecc71; color: white; }
+        .cors-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .cors-solution {
+            background: #d1ecf1;
+            border: 1px solid #b8daff;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        code {
+            background: #f8f9fa;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .example {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@3.52.5/swagger-ui-bundle.js"></script>
-    <script src="https://unpkg.com/swagger-ui-dist@3.52.5/swagger-ui-standalone-preset.js"></script>
-    <script>
-        window.onload = function() {
-            const ui = SwaggerUIBundle({
-                url: '#',
-                spec: ${JSON.stringify(swaggerSpec)},
-                dom_id: '#swagger-ui',
-                deepLinking: true,
-                presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIStandalonePreset
-                ],
-                plugins: [
-                    SwaggerUIBundle.plugins.DownloadUrl
-                ],
-                layout: "StandaloneLayout"
-            });
-        };
-    </script>
+    <div class="container">
+        <h1>🎌 Anime-Sama API Documentation</h1>
+        
+        <div class="cors-warning">
+            <h3>⚠️ Important: Problème CORS Résolu</h3>
+            <p>Les URLs vidéo d'anime-sama.fr ne peuvent pas être chargées directement dans des iframes depuis des domaines externes à cause des politiques CORS.</p>
+            <p><strong>Problème:</strong> <code>X-Frame-Options: DENY</code> et <code>Content-Security-Policy: frame-ancestors 'self'</code></p>
+        </div>
+
+        <div class="cors-solution">
+            <h3>✅ Solutions CORS Intégrées</h3>
+            <p>Cette API fournit maintenant deux solutions automatiques pour contourner les restrictions CORS:</p>
+            <ul>
+                <li><strong>Proxy API:</strong> <code>/api/proxy/[url]</code> - Proxie les requêtes vers anime-sama.fr</li>
+                <li><strong>Embed API:</strong> <code>/api/embed/[episodeId]</code> - Page d'embed complète prête à utiliser</li>
+            </ul>
+        </div>
+
+        <h2>📋 Endpoints Principaux</h2>
+
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <strong>/api/episode/[id]</strong>
+            <p>Récupère les sources de streaming pour un épisode. Inclut maintenant des URLs proxy pour contourner CORS.</p>
+            <div class="example">
+                <strong>Exemple:</strong> <code>/api/episode/one-piece-1090-vostfr</code>
+                <pre>{
+  "success": true,
+  "data": {
+    "episodeId": "one-piece-1090-vostfr",
+    "sources": [
+      {
+        "url": "https://anime-sama.fr/catalogue/one-piece/saison1/vostfr/episode-1090",
+        "proxyUrl": "/api/proxy/https%3A%2F%2Fanime-sama.fr%2Fcatalogue%2Fone-piece%2Fsaison1%2Fvostfr%2Fepisode-1090",
+        "embedUrl": "/api/embed/one-piece-1090-vostfr",
+        "server": "Anime-Sama",
+        "language": "VOSTFR",
+        "type": "iframe"
+      }
+    ],
+    "embedUrl": "/api/embed/one-piece-1090-vostfr",
+    "corsInfo": {
+      "note": "Original URLs may have CORS restrictions. Use proxyUrl or embedUrl for direct access."
+    }
+  }
+}</pre>
+            </div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <strong>/api/proxy/[...url]</strong>
+            <p>Proxie les requêtes vers anime-sama.fr en contournant les restrictions CORS.</p>
+            <div class="example">
+                <strong>Exemple:</strong> <code>/api/proxy/https%3A%2F%2Fanime-sama.fr%2Fcatalogue%2Fone-piece%2Fsaison1%2Fvostfr%2Fepisode-1090</code>
+                <p>Retourne le contenu HTML de la page d'épisode avec les headers CORS appropriés.</p>
+            </div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <strong>/api/embed/[episodeId]</strong>
+            <p>Page d'embed complète prête à utiliser dans une iframe.</p>
+            <div class="example">
+                <strong>Exemple:</strong> <code>/api/embed/one-piece-1090-vostfr</code>
+                <p>Retourne une page HTML complète avec lecteur vidéo intégré et sélecteur de sources.</p>
+                <pre>&lt;iframe src="/api/embed/one-piece-1090-vostfr" width="100%" height="500px"&gt;&lt;/iframe&gt;</pre>
+            </div>
+        </div>
+
+        <h2>🔧 Instructions pour Votre IA</h2>
+        
+        <div class="cors-solution">
+            <h3>Message à envoyer à votre IA:</h3>
+            <pre>"J'ai un problème CORS avec mon API anime-sama. Les vidéos ne se chargent pas dans les iframes à cause de X-Frame-Options: DENY. 
+
+Peux-tu m'aider à:
+1. Créer un endpoint proxy /api/proxy/[url] qui contourne CORS
+2. Ajouter les headers: X-Frame-Options: ALLOWALL et Content-Security-Policy: frame-ancestors *
+3. Modifier l'endpoint /api/episode/[id] pour inclure des proxyUrl dans la réponse
+4. Créer un endpoint /api/embed/[episodeId] qui retourne une page HTML prête à embed
+
+L'objectif est de permettre l'embedding des vidéos anime-sama.fr depuis n'importe quel domaine."</pre>
+        </div>
+
+        <h2>🔧 Utilisation avec CORS</h2>
+
+        <h3>Option 1: Utiliser l'embed (Recommandé)</h3>
+        <pre>&lt;iframe 
+  src="https://your-api-domain.replit.app/api/embed/one-piece-1090-vostfr" 
+  width="100%" 
+  height="500px"
+  frameborder="0"
+  allowfullscreen&gt;
+&lt;/iframe&gt;</pre>
+
+        <h3>Option 2: Utiliser le proxy</h3>
+        <pre>// Récupérer les sources
+const response = await fetch('/api/episode/one-piece-1090-vostfr');
+const data = await response.json();
+
+// Utiliser l'URL proxy au lieu de l'URL originale
+const proxyUrl = data.data.sources[0].proxyUrl;
+
+// Créer l'iframe avec l'URL proxy
+const iframe = document.createElement('iframe');
+iframe.src = proxyUrl;
+iframe.width = '100%';
+iframe.height = '500px';
+document.body.appendChild(iframe);</pre>
+
+        <h2>📊 Autres Endpoints</h2>
+        
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <strong>/api/search</strong> - Recherche d'animes par nom
+        </div>
+        
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <strong>/api/anime/[id]</strong> - Détails complets d'un anime
+        </div>
+        
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <strong>/api/trending</strong> - Liste des animes populaires
+        </div>
+        
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <strong>/api/health</strong> - Statut de l'API
+        </div>
+
+        <h2>🚀 Statut</h2>
+        <p><strong>Migration terminée:</strong> ✅ Replit Agent → Replit environment</p>
+        <p><strong>CORS résolu:</strong> ✅ Proxy et embed endpoints fonctionnels</p>
+        <p><strong>Documentation:</strong> ✅ Complète avec exemples</p>
+
+        <hr>
+        <p><em>Documentation mise à jour: Janvier 2025 - Migration Replit complète</em></p>
+    </div>
 </body>
-</html>
-`;
+</html>`;
 
   res.setHeader('Content-Type', 'text/html');
   res.status(200).send(html);
