@@ -4,7 +4,7 @@
 
 API REST complètement fonctionnelle qui scrape anime-sama.fr pour fournir des données d'anime authentiques. L'API reproduit fidèlement la structure et les données du site original avec une navigation utilisateur réaliste.
 
-**URL de base** : `http://0.0.0.0:5000` (développement)
+**URL de base** : `https://api-anime-sama.onrender.com` 
 
 ---
 
