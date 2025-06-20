@@ -130,6 +130,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - June 19, 2025. Updated Docker configuration to use modern npm flags (--omit=dev instead of deprecated --production)
 - June 19, 2025. Fixed season episode numbering bug - seasons now return correct episode numbers (e.g., One Piece S10 starts at episode 890)
 - June 20, 2025. Added progressInfo extraction to show real anime progress data (total episodes, films, scans availability) instead of placeholder "Episode 1"
+- June 20, 2025. Created comprehensive final documentation (API_DOCUMENTATION_FINALE.md) with all improvements and authentic data examples
 
 ## User Preferences
 
