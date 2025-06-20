@@ -237,21 +237,45 @@ export class AnimeSamaNavigator {
       
       const episodes: any[] = [];
       
-      // Extraction des épisodes depuis la page
-      $('.episode-item, .episode-link, .episode-button, .btn-episode').each((index, element) => {
-        const episodeNumber = index + 1;
-        
-        episodes.push({
-          id: `${animeId}-episode-${episodeNumber}-${language.toLowerCase()}`,
-          title: `Épisode ${episodeNumber}`,
-          episodeNumber,
-          url: `${seasonUrl}episode-${episodeNumber}`,
-          language,
-          available: true
-        });
-      });
+      // Extraire les vrais numéros d'épisodes depuis la page HTML
+      const episodeLinks = $('a[href*="episode-"], .episode-link, .episode-item').toArray();
       
-      // Si pas d'épisodes trouvés, créer une liste par défaut
+      if (episodeLinks.length > 0) {
+        episodeLinks.forEach((element, index) => {
+          const $elem = $(element);
+          const href = $elem.attr('href') || '';
+          const text = $elem.text().trim();
+          
+          // Extraire le numéro d'épisode depuis l'URL ou le texte
+          const episodeMatch = href.match(/episode-(\d+)/) || text.match(/(?:épisode|episode)\s*(\d+)/i);
+          const episodeNumber = episodeMatch ? parseInt(episodeMatch[1]) : index + 1;
+          
+          episodes.push({
+            id: `${animeId}-episode-${episodeNumber}-${language.toLowerCase()}`,
+            title: `Épisode ${episodeNumber}`,
+            episodeNumber,
+            url: href.startsWith('http') ? href : `${seasonUrl}/episode-${episodeNumber}`,
+            language,
+            available: true
+          });
+        });
+      } else {
+        // Fallback: générer une liste standard si aucun épisode trouvé
+        const baseEpisodeNum = this.getSeasonStartEpisode(animeId, seasonNumber);
+        for (let i = 1; i <= 50; i++) {
+          const actualEpisodeNum = baseEpisodeNum + i - 1;
+          episodes.push({
+            id: `${animeId}-episode-${actualEpisodeNum}-${language.toLowerCase()}`,
+            title: `Épisode ${actualEpisodeNum}`,
+            episodeNumber: actualEpisodeNum,
+            url: `${seasonUrl}/episode-${actualEpisodeNum}`,
+            language,
+            available: true
+          });
+        }
+      }
+      
+      
       if (episodes.length === 0) {
         for (let i = 1; i <= 24; i++) {
           episodes.push({
@@ -1001,6 +1025,44 @@ export class AnimeSamaNavigator {
            !url.includes('banner') &&
            !url.includes('aclib') &&
            url.startsWith('http');
+  }
+
+  /**
+   * Obtenir le numéro d'épisode de début pour une saison donnée
+   */
+  private getSeasonStartEpisode(animeId: string, seasonNumber: number): number {
+    // Mapping spécifique pour certains animes
+    const episodeMappings: { [key: string]: { [season: number]: number } } = {
+      'one-piece': {
+        1: 1,    // East Blue
+        2: 62,   // Arabasta  
+        3: 144,  // Sky Island
+        4: 207,  // Water Seven
+        5: 326,  // Thriller Bark
+        6: 385,  // Marineford
+        7: 517,  // Fish-Man Island
+        8: 579,  // Dressrosa
+        9: 783,  // Zou
+        10: 890, // Wano
+        11: 1086 // Egghead
+      },
+      'naruto': {
+        1: 1,
+        2: 221
+      },
+      'dragon-ball-z': {
+        1: 1,
+        2: 36,
+        3: 66,
+        4: 108,
+        5: 140,
+        6: 165,
+        7: 200,
+        8: 254
+      }
+    };
+    
+    return episodeMappings[animeId]?.[seasonNumber] || 1;
   }
 }
 
