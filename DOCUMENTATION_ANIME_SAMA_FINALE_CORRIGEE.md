@@ -4,9 +4,10 @@
 
 La page Anime-Sama reproduit fidèlement l'interface et les fonctionnalités du site anime-sama.fr avec des données 100% authentiques. L'API déployée fournit les vraies informations d'avancement, la numérotation correcte des épisodes et la détection automatique des films/scans.
 
-**Status**: ✅ Production Ready - CORS Résolu - Données authentiques confirmées  
-**API**: `https://api-anime-sama.onrender.com` (Version 2.0 - Production)  
-**Dernière mise à jour**: 20 juin 2025 - Migration Replit Agent complète
+**Status**: ⚠️ CORS en cours de déploiement - Données authentiques confirmées  
+**API Production**: `https://api-anime-sama.onrender.com` (Version 1.0 - Sans CORS)  
+**API Development**: `http://localhost:5000` (Version 2.0 - Avec CORS)  
+**Dernière mise à jour**: 20 juin 2025 - CORS implémenté localement, déploiement Render en attente
 
 ## 📁 Architecture des fichiers
 
@@ -181,8 +182,8 @@ const searchAnimes = async (query: string) => {
   setSearchResults(apiResponse.data);
 };
 
-// Configuration API
-const API_BASE = 'https://api-anime-sama.onrender.com';
+// Configuration API (temporaire pour CORS)
+const API_BASE = 'http://localhost:5000'; // Utiliser localhost jusqu'au déploiement Render
 ```
 
 ### Chargement anime
