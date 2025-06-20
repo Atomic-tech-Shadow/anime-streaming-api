@@ -42,7 +42,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    return sendSuccess(res, episodeData, {
+    // Add proxy URLs to bypass CORS restrictions
+    const enhancedSources = episodeData.sources.map(source => ({
+      ...source,
+      proxyUrl: `/api/proxy/${encodeURIComponent(source.url)}`,
+      embedUrl: `/api/embed/${episodeId}`
+    }));
+
+    const enhancedEpisodeData = {
+      ...episodeData,
+      sources: enhancedSources,
+      embedUrl: `/api/embed/${episodeId}`,
+      corsInfo: {
+        note: 'Original URLs may have CORS restrictions. Use proxyUrl or embedUrl for direct access.',
+        proxyEndpoint: '/api/proxy/[url]',
+        embedEndpoint: '/api/embed/[episodeId]'
+      }
+    };
+
+    return sendSuccess(res, enhancedEpisodeData, {
       episodeId,
       episodeNumber: episodeData.episodeNumber,
       animeTitle: episodeData.animeTitle,
@@ -51,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       servers: episodeData.availableServers,
       serverIndices: [...new Set(episodeData.sources.map(s => s.serverIndex))],
       source: 'anime-sama.fr',
-      method: 'authentic_structure'
+      method: 'authentic_structure_with_cors_bypass'
     });
 
   } catch (error) {

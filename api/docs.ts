@@ -1,5 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders } from './lib/core';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -7,6 +9,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+
+  try {
+    const docsPath = join(process.cwd(), 'api', 'docs.html');
+    const docsHtml = readFileSync(docsPath, 'utf-8');
+    
+    res.setHeader('Content-Type', 'text/html');
+    return res.status(200).send(docsHtml);
+  } catch (error) {
+    console.error('Docs error:', error);
+    return res.status(500).json({
+      error: 'Documentation not available',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
 
   const swaggerSpec = {
     openapi: "3.0.0",

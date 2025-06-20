@@ -132,6 +132,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - June 20, 2025. Added progressInfo extraction to show real anime progress data (total episodes, films, scans availability) instead of placeholder "Episode 1"
 - June 20, 2025. Created comprehensive final documentation (API_DOCUMENTATION_FINALE.md) with all improvements and authentic data examples
 - June 20, 2025. Validated deployed API functionality and created final interface documentation (DOCUMENTATION_ANIME_SAMA_FINALE.md) with authentic anime-sama.fr data integration
+- June 20, 2025. Migration complete from Replit Agent to Replit environment - solved CORS iframe restrictions with proxy endpoints (/api/proxy/[url]) and embed pages (/api/embed/[episodeId]), enhanced CORS headers for cross-origin compatibility
 
 ## User Preferences
 

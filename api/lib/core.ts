@@ -118,6 +118,32 @@ export function createAxiosInstance(sessionCookies?: string): AxiosInstance {
   return instance;
 }
 
+// Create authenticated client for proxy requests
+export async function createAuthenticatedClient(): Promise<AxiosInstance> {
+  const userAgent = getRandomUserAgent();
+  
+  const client = axios.create({
+    timeout: 30000,
+    maxRedirects: 5,
+    headers: {
+      'User-Agent': userAgent,
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'DNT': '1',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Sec-Fetch-Dest': 'iframe',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'cross-site'
+    }
+  });
+
+  return client;
+}
+
 // Random delay for human-like behavior
 export async function randomDelay(min: number = 500, max: number = 2000): Promise<void> {
   const delay = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -217,11 +243,15 @@ export function getClientIP(req: any): string {
          'unknown';
 }
 
-// CORS headers for Vercel
+// CORS headers for Vercel with iframe support
 export function setCorsHeaders(res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('X-Frame-Options', 'ALLOWALL');
+  res.setHeader('Content-Security-Policy', 'frame-ancestors *');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
 }
 
