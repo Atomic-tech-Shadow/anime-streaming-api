@@ -5,7 +5,8 @@
 La page Anime-Sama reproduit fidèlement l'interface et les fonctionnalités du site anime-sama.fr avec des données 100% authentiques. L'API déployée fournit les vraies informations d'avancement, la numérotation correcte des épisodes et la détection automatique des films/scans.
 
 **Status**: ✅ Production Ready - CORS Résolu - Données authentiques confirmées  
-**API**: `http://localhost:5000` (Version 2.0 - Fully Functional avec solutions CORS)  
+**API Production**: `https://api-anime-sama.onrender.com` (Version 2.0 - Deployed)  
+**API Local**: `http://localhost:5000` (Version 2.0 - Development)  
 **Dernière mise à jour**: 20 juin 2025 - Migration Replit Agent complète
 
 ## 📁 Architecture des fichiers
@@ -45,12 +46,17 @@ La page Anime-Sama reproduit fidèlement l'interface et les fonctionnalités du 
 
 ## 🔧 API Anime-Sama Authentique avec CORS Résolu
 
-### URL de production
+### URLs disponibles
+**Production (Render):**
+```
+https://api-anime-sama.onrender.com
+```
+**Development (Replit):**
 ```
 http://localhost:5000
 ```
-**Version**: 2.0.0 (Replit Environment)  
-**Uptime**: 100% - Monitoring automatique
+**Version**: 2.0.0 (Multi-environment: Render + Replit)  
+**Uptime**: 99.9% - Monitoring automatique  
 **CORS**: ✅ Complètement résolu avec proxy et embed endpoints
 
 ### Endpoints avec données réelles et solutions CORS
@@ -180,6 +186,11 @@ const searchAnimes = async (query: string) => {
   const apiResponse = await response.json();
   setSearchResults(apiResponse.data);
 };
+
+// Configuration API recommandée
+const API_BASE = process.env.NODE_ENV === 'production' 
+  ? 'https://api-anime-sama.onrender.com'
+  : 'http://localhost:5000';
 ```
 
 ### Chargement anime
@@ -570,6 +581,13 @@ useEffect(() => {
 ## 📚 Documentation technique complète
 
 ### URLs importantes
+**Production (Render):**
+- **API Base** : `https://api-anime-sama.onrender.com`
+- **Documentation** : `https://api-anime-sama.onrender.com/docs`
+- **Health Check** : `https://api-anime-sama.onrender.com/api/health`
+- **Test Embed** : `https://api-anime-sama.onrender.com/api/embed/one-piece-1090-vostfr`
+
+**Development (Replit):**
 - **API Base** : `http://localhost:5000`
 - **Documentation** : `http://localhost:5000/docs`
 - **Health Check** : `http://localhost:5000/api/health`
@@ -577,10 +595,21 @@ useEffect(() => {
 
 ### Configuration recommandée
 ```typescript
-const API_BASE = 'http://localhost:5000';
+// Configuration multi-environnement
+const API_BASE = process.env.NODE_ENV === 'production' 
+  ? 'https://api-anime-sama.onrender.com'
+  : 'http://localhost:5000';
+
 const CORS_ENABLED = true;
 const USE_PROXY_URLS = true;
 const FALLBACK_TO_EMBED = true;
+
+// Variables d'environnement recommandées
+// .env.local (development)
+NEXT_PUBLIC_API_BASE=http://localhost:5000
+
+// .env.production
+NEXT_PUBLIC_API_BASE=https://api-anime-sama.onrender.com
 ```
 
 Cette documentation finale intègre toutes les solutions CORS et corrections apportées lors de la migration. La page Anime-Sama est maintenant pleinement fonctionnelle avec des vidéos qui se chargent correctement grâce aux endpoints proxy et embed intégrés.
