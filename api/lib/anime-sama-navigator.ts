@@ -21,6 +21,13 @@ export interface NavigatorAnimeResponse {
   year: string;
   seasons: NavigatorSeason[];
   url: string;
+  progressInfo?: {
+    advancement: string;
+    correspondence: string;
+    totalEpisodes?: number;
+    hasFilms?: boolean;
+    hasScans?: boolean;
+  };
 }
 
 export interface NavigatorSeason {
@@ -199,6 +206,8 @@ export class AnimeSamaNavigator {
       const status = this.extractStatus($);
       const year = this.extractYear($);
       
+      const progressInfo = this.extractProgressInfo($);
+      
       return {
         id: animeId,
         title,
@@ -208,7 +217,8 @@ export class AnimeSamaNavigator {
         status,
         year,
         seasons,
-        url: animeUrl
+        url: animeUrl,
+        progressInfo
       };
       
     } catch (error) {
@@ -1063,6 +1073,39 @@ export class AnimeSamaNavigator {
     };
     
     return episodeMappings[animeId]?.[seasonNumber] || 1;
+  }
+
+  /**
+   * Extraire les informations d'avancement depuis la page anime
+   */
+  private extractProgressInfo($: cheerio.CheerioAPI): { advancement: string; correspondence: string; totalEpisodes?: number; hasFilms?: boolean; hasScans?: boolean; } {
+    // Extraction plus précise basée sur la structure HTML réelle
+    const advancementEl = $('p:contains("Avancement")').find('a').text().trim() || 
+                         $('p:contains("Avancement")').text().replace('Avancement :', '').trim() ||
+                         'Aucune donnée';
+    
+    const correspondenceEl = $('p:contains("Correspondance")').find('a').text().trim() || 
+                            $('p:contains("Correspondance")').text().replace('Correspondance :', '').trim() ||
+                            'Épisode 1';
+    
+    // Chercher le nombre total d'épisodes dans la correspondance
+    const totalEpisodesMatch = correspondenceEl.match(/episode?\s*(\d+)/i);
+    const totalEpisodes = totalEpisodesMatch ? parseInt(totalEpisodesMatch[1]) : undefined;
+    
+    // Vérifier la présence de films et scans dans les panneaux
+    const pageText = $.html();
+    const hasFilms = pageText.includes('film') || pageText.includes('Films') || 
+                    $('[href*="film"], [onclick*="film"]').length > 0;
+    const hasScans = pageText.includes('scan') || pageText.includes('Scans') || 
+                    $('[href*="scan"], [onclick*="scan"]').length > 0;
+    
+    return {
+      advancement: advancementEl,
+      correspondence: correspondenceEl,
+      totalEpisodes,
+      hasFilms,
+      hasScans
+    };
   }
 }
 
