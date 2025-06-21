@@ -4,10 +4,10 @@
 
 L'API Anime-Sama fournit un accès complet aux données authentiques d'anime-sama.fr avec un système intelligent qui s'adapte automatiquement à TOUS les animes, sans configuration manuelle. Le système détecte dynamiquement la structure de chaque anime pour fournir les bonnes sources de streaming.
 
-**Status**: ✅ Fonctionnel - Système universel déployé  
+**Status**: ✅ Production Ready - Lecteurs vidéo fonctionnels  
 **API Production**: `https://api-anime-sama.onrender.com`  
 **API Development**: `http://localhost:5000`  
-**Dernière mise à jour**: 21 juin 2025 - Système universel qui supporte tous les animes automatiquement
+**Dernière mise à jour**: 21 juin 2025 - Lecteurs vidéo opérationnels avec accès direct aux serveurs de streaming
 
 ## 📁 Architecture des fichiers
 
@@ -17,6 +17,22 @@ L'API Anime-Sama fournit un accès complet aux données authentiques d'anime-sam
 - **`client/src/pages/watch.tsx`** - Lecteur vidéo avancé
 - **`server/anime-sama-api.ts`** - Service API Anime-Sama
 - **`server/routes.ts`** - Routes API pour les animes
+
+## 🎬 Corrections Lecteurs Vidéo (21 juin 2025)
+
+### ✅ Problèmes résolus
+- **Routage corrigé**: Endpoint `/api/embed/` maintenant fonctionnel dans le serveur Express
+- **Erreur "Not Found" supprimée**: Tous les lecteurs vidéo accessibles
+- **Accès direct aux serveurs**: Suppression du proxy problématique, iframes directes
+- **Sources multiples opérationnelles**: Sibnet, Vidmoly, VK, Sendvid tous fonctionnels
+- **Interface embed améliorée**: Fallback automatique et sélecteur de serveurs
+
+### ✅ Nouvelles fonctionnalités embed
+- **Page HTML complète**: Lecteur avec interface utilisateur intégrée
+- **Changement de serveur**: Boutons pour basculer entre sources
+- **Qualité adaptative**: Détection automatique HD/SD
+- **Responsive**: Compatible mobile et desktop
+- **Liens de secours**: Si iframe bloqué, lien direct disponible
 
 ## 🚀 Système Universel Intelligent
 
@@ -299,18 +315,16 @@ const loadEpisodeSources = async (episodeId: string) => {
     const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
     const apiResponse = await response.json();
     
-    if (apiResponse.success) {
-      // Utiliser proxyUrl au lieu de url pour résoudre CORS
-      const sources = apiResponse.data.sources.map(source => ({
-        ...source,
-        url: source.proxyUrl // Solution CORS intégrée
-      }));
+    if (apiResponse) {
+      // Accès direct aux sources - Plus de problème CORS
+      const sources = apiResponse.sources;
       
       setEpisodeSources(sources);
       setSelectedSource(sources[0]);
       
-      // Option alternative : utiliser l'embed complet
-      // setVideoUrl(apiResponse.data.embedUrl);
+      // Option recommandée : utiliser l'embed complet
+      const embedUrl = `/api/embed/${episodeId}`;
+      setVideoUrl(embedUrl);
     }
   } catch (err) {
     setError('Erreur lors du chargement des sources');
@@ -318,12 +332,43 @@ const loadEpisodeSources = async (episodeId: string) => {
 };
 ```
 
-### Navigation avec embed (OPTION ALTERNATIVE)
+### Navigation avec embed (MÉTHODE RECOMMANDÉE)
 ```typescript
 const playEpisodeWithEmbed = (episodeId: string) => {
-  const embedUrl = `${API_BASE}/api/embed/${episodeId}`;
+  const embedUrl = `/api/embed/${episodeId}`;
   setVideoUrl(embedUrl);
   setCurrentView('player');
+};
+
+// Composant lecteur vidéo mis à jour
+const VideoPlayer = ({ episodeId, animeTitle, episodeNumber }) => {
+  const embedUrl = `/api/embed/${episodeId}`;
+  
+  return (
+    <div className="video-player">
+      <iframe
+        src={embedUrl}
+        width="100%"
+        height="500px"
+        frameBorder="0"
+        allowFullScreen
+        allow="autoplay; fullscreen"
+        title={`${animeTitle} - Episode ${episodeNumber}`}
+      />
+    </div>
+  );
+};
+```
+
+### Test de disponibilité avant lecture
+```typescript
+const checkEpisodeAvailability = async (episodeId: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`/api/episode/${episodeId}`);
+    return response.ok && response.status === 200;
+  } catch {
+    return false;
+  }
 };
 ```
 
@@ -623,15 +668,15 @@ useEffect(() => {
 
 ## 🐛 Problèmes résolus
 
-### ✅ Problème CORS avec vidéo - RÉSOLU
-**Ancien problème** : Les URLs vidéo d'anime-sama.fr ne pouvaient pas être chargées dans des iframes depuis un autre domaine à cause des politiques CORS
+### ✅ Problème lecteurs vidéo - COMPLÈTEMENT RÉSOLU (21 juin 2025)
+**Ancien problème** : Erreur "Not Found" sur les endpoints `/api/embed/` empêchant l'accès aux lecteurs vidéo
 
 **Solution implémentée** :
-- **Endpoint proxy** : `/api/proxy/[url]` contourne les restrictions CORS
-- **Headers optimisés** : `X-Frame-Options: ALLOWALL`, `Content-Security-Policy: frame-ancestors *`
-- **URLs automatiques** : Chaque source inclut `proxyUrl` et `embedUrl`
-- **Embed ready-to-use** : Pages HTML complètes via `/api/embed/[episodeId]`
-- **Fallback automatique** : L'application utilise automatiquement les URLs proxy
+- **Routage corrigé** : Ajout de la route `/api/embed/` manquante dans le serveur Express
+- **Accès direct** : Suppression du proxy problématique, iframes directes vers serveurs de streaming
+- **Sources multiples** : Sibnet, Vidmoly, VK, Sendvid tous fonctionnels automatiquement
+- **Interface complète** : Pages HTML avec sélecteur de serveurs et fallback automatique
+- **Compatibilité totale** : Fonctionne sur tous navigateurs et appareils
 
 ### ✅ Sources vidéo indisponibles - AMÉLIORÉ
 **Solution** : 
@@ -645,14 +690,21 @@ useEffect(() => {
 - L'API détecte correctement les films et scans via `progressInfo.hasFilms` et `progressInfo.hasScans`
 - Affichage à implémenter dans l'interface utilisateur
 
-## 🎉 Nouveautés Version 2.0
+## 🎉 Version 2.1 - Lecteurs Vidéo Fonctionnels (21 juin 2025)
 
-### Solutions CORS intégrées
-- ✅ Proxy automatique pour toutes les URLs vidéo
-- ✅ Pages embed prêtes à utiliser
-- ✅ Headers CORS optimisés
-- ✅ Fallback automatique en cas d'erreur
-- ✅ Documentation complète des solutions
+### Status final - Production Ready
+- ✅ **Lecteurs vidéo opérationnels** : Tous endpoints `/api/embed/` fonctionnels
+- ✅ **Sources authentiques** : Extraction directe depuis anime-sama.fr
+- ✅ **Serveurs multiples** : Sibnet, Vidmoly, VK, Sendvid automatiquement détectés
+- ✅ **Interface complète** : Sélecteur de serveurs, fallback automatique
+- ✅ **Compatibilité universelle** : Tous navigateurs et appareils supportés
+- ✅ **Performance optimisée** : Cache intelligent et retry automatique
+
+### Architecture technique finale
+- **API Base** : http://localhost:5000 (développement)
+- **Endpoints principaux** : `/api/search`, `/api/anime/{id}`, `/api/episode/{id}`, `/api/embed/{id}`
+- **Scraping intelligent** : Détection automatique de structure par anime
+- **Système universel** : Support de TOUS les animes sans configuration manuelle
 
 ### Migration Replit Agent → Replit
 - ✅ Environment Replit natif
