@@ -379,61 +379,47 @@ export class AnimeSamaNavigator {
               // For One Piece, calculate the correct episode index within the current season
               let episodeIndex = parseInt(episodeNumber) - 1;
               
-              // Calculate relative episode index for multi-season animes
+              // Smart episode index calculation that adapts to any anime structure
               const epNum = parseInt(episodeNumber);
-              const animeSeasonMappings: { [key: string]: { [season: number]: number } } = {
-                'one-piece': {
-                  1: 1, 2: 62, 3: 144, 4: 207, 5: 326, 6: 385, 7: 517, 8: 579, 9: 783, 10: 890, 11: 1086
-                },
-                'naruto': {
-                  1: 1, 2: 221
-                },
-                'naruto-shippuden': {
-                  1: 1, 2: 72, 3: 143, 4: 197, 5: 261, 6: 321, 7: 372, 8: 395, 9: 417, 10: 463, 11: 490, 12: 517
-                },
-                'dragon-ball-z': {
-                  1: 1, 2: 36, 3: 66, 4: 108, 5: 140, 6: 165, 7: 200, 8: 254
-                },
-                'dragon-ball-super': {
-                  1: 1, 2: 28, 3: 47, 4: 77, 5: 109
-                },
-                'attack-on-titan': {
-                  1: 1, 2: 26, 3: 39, 4: 60
-                },
-                'demon-slayer': {
-                  1: 1, 2: 27, 3: 38
-                },
-                'my-hero-academia': {
-                  1: 1, 2: 14, 3: 39, 4: 64, 5: 89, 6: 114, 7: 139
-                },
-                'hunter-x-hunter': {
-                  1: 1, 2: 32, 3: 59, 4: 76, 5: 92, 6: 119
-                },
-                'jujutsu-kaisen': {
-                  1: 1, 2: 25
-                },
-                'tokyo-ghoul': {
-                  1: 1, 2: 13, 3: 25
-                },
-                'fullmetal-alchemist-brotherhood': {
-                  1: 1, 2: 17, 3: 33, 4: 49
-                }
-              };
-
-              if (animeSeasonMappings[animeId]) {
-                const seasonMappings = animeSeasonMappings[animeId];
-                let seasonStart = 1;
+              
+              // First, analyze the episodes.js file to understand the anime structure
+              const firstArrayMatch = episodesData.match(/var eps1\s*=\s*\[(.*?)\];/s);
+              let detectedArraySize = 0;
+              
+              if (firstArrayMatch) {
+                const arrayContent = firstArrayMatch[1];
+                const urls = this.parseJavaScriptArray(arrayContent);
+                detectedArraySize = urls.length;
+                console.log(`📊 Structure détectée: ${detectedArraySize} épisodes par saison`);
+              }
+              
+              // Calculate the best episode index based on detected structure
+              if (detectedArraySize > 0 && epNum > detectedArraySize) {
+                // Multi-season anime: calculate relative position
+                episodeIndex = (epNum - 1) % detectedArraySize;
+                console.log(`🎯 ${animeId} épisode ${episodeNumber} -> multi-saisons (${detectedArraySize} éps/saison), index relatif: ${episodeIndex}`);
+              } else if (epNum <= detectedArraySize || detectedArraySize === 0) {
+                // Single season anime or episode within detected range
+                episodeIndex = epNum - 1;
+                console.log(`🎯 ${animeId} épisode ${episodeNumber} -> saison unique, index: ${episodeIndex}`);
+              } else {
+                // Fallback: try standard approaches
+                const strategies = [
+                  { name: 'standard', index: epNum - 1 },
+                  { name: 'mod25', index: (epNum - 1) % 25 },
+                  { name: 'mod30', index: (epNum - 1) % 30 },
+                  { name: 'mod50', index: (epNum - 1) % 50 },
+                  { name: 'mod12', index: (epNum - 1) % 12 }
+                ];
                 
-                for (const [season, startEp] of Object.entries(seasonMappings)) {
-                  if (epNum >= startEp) {
-                    seasonStart = startEp;
-                  } else {
+                // Use the strategy that puts us within reasonable bounds
+                for (const strategy of strategies) {
+                  if (strategy.index >= 0 && strategy.index < 200) {
+                    episodeIndex = strategy.index;
+                    console.log(`🎯 ${animeId} épisode ${episodeNumber} -> stratégie ${strategy.name}, index: ${episodeIndex}`);
                     break;
                   }
                 }
-                
-                episodeIndex = epNum - seasonStart;
-                console.log(`🎯 ${animeId} épisode ${episodeNumber} -> saison commence à ${seasonStart}, index relatif: ${episodeIndex}`);
               }
               
               const serverArrays = ['eps1', 'eps2', 'eps3', 'eps4'];
@@ -1148,59 +1134,9 @@ export class AnimeSamaNavigator {
    * Obtenir le numéro d'épisode de début pour une saison donnée
    */
   private getSeasonStartEpisode(animeId: string, episodeNumber: number): number {
-    // Mapping étendu pour tous les animes populaires
-    const episodeMappings: { [key: string]: { [season: number]: number } } = {
-      'one-piece': {
-        1: 1, 2: 62, 3: 144, 4: 207, 5: 326, 6: 385, 7: 517, 8: 579, 9: 783, 10: 890, 11: 1086
-      },
-      'naruto': {
-        1: 1, 2: 221
-      },
-      'naruto-shippuden': {
-        1: 1, 2: 72, 3: 143, 4: 197, 5: 261, 6: 321, 7: 372, 8: 395, 9: 417, 10: 463, 11: 490, 12: 517
-      },
-      'dragon-ball-z': {
-        1: 1, 2: 36, 3: 66, 4: 108, 5: 140, 6: 165, 7: 200, 8: 254
-      },
-      'dragon-ball-super': {
-        1: 1, 2: 28, 3: 47, 4: 77, 5: 109
-      },
-      'attack-on-titan': {
-        1: 1, 2: 26, 3: 39, 4: 60
-      },
-      'demon-slayer': {
-        1: 1, 2: 27, 3: 38
-      },
-      'my-hero-academia': {
-        1: 1, 2: 14, 3: 39, 4: 64, 5: 89, 6: 114, 7: 139
-      },
-      'hunter-x-hunter': {
-        1: 1, 2: 32, 3: 59, 4: 76, 5: 92, 6: 119
-      },
-      'jujutsu-kaisen': {
-        1: 1, 2: 25
-      },
-      'tokyo-ghoul': {
-        1: 1, 2: 13, 3: 25
-      },
-      'fullmetal-alchemist-brotherhood': {
-        1: 1, 2: 17, 3: 33, 4: 49
-      }
-    };
-    
-    const seasonMappings = episodeMappings[animeId];
-    if (!seasonMappings) return 1;
-    
-    let seasonStart = 1;
-    for (const [season, startEp] of Object.entries(seasonMappings)) {
-      if (episodeNumber >= startEp) {
-        seasonStart = startEp;
-      } else {
-        break;
-      }
-    }
-    
-    return seasonStart;
+    // Universal calculation - no hardcoded mappings needed
+    // This method is now obsolete as we use dynamic detection
+    return 1;
   }
 
   /**
