@@ -78,18 +78,14 @@
     <div class="container">
         <h1>🎌 Anime-Sama API Documentation</h1>
         
-        <div class="cors-warning">
-            <h3>⚠️ Important: CORS Restrictions</h3>
-            <p>Les URLs vidéo d'anime-sama.fr ne peuvent pas être chargées directement dans des iframes depuis des domaines externes à cause des politiques CORS.</p>
-            <p><strong>Problème:</strong> <code>X-Frame-Options: DENY</code> et <code>Content-Security-Policy: frame-ancestors 'self'</code></p>
-        </div>
-
         <div class="cors-solution">
-            <h3>✅ Solutions CORS</h3>
-            <p>Cette API fournit deux solutions pour contourner les restrictions CORS:</p>
+            <h3>✅ Lecteurs Vidéo Fonctionnels (Mise à jour 21 juin 2025)</h3>
+            <p>Les lecteurs vidéo sont maintenant complètement opérationnels avec accès direct aux serveurs de streaming:</p>
             <ul>
-                <li><strong>Proxy API:</strong> <code>/api/proxy/[url]</code> - Proxie les requêtes vers anime-sama.fr</li>
-                <li><strong>Embed API:</strong> <code>/api/embed/[episodeId]</code> - Page d'embed complète prête à utiliser</li>
+                <li><strong>Embed API:</strong> <code>/api/embed/[episodeId]</code> - Page complète avec lecteur intégré</li>
+                <li><strong>Sources multiples:</strong> Sibnet, Vidmoly, VK, Sendvid automatiquement détectés</li>
+                <li><strong>Accès direct:</strong> Plus de proxy requis, iframes directes vers les serveurs</li>
+                <li><strong>Fallback intelligent:</strong> Lien direct si iframe bloqué</li>
             </ul>
         </div>
 
@@ -98,28 +94,33 @@
         <div class="endpoint">
             <span class="method get">GET</span>
             <strong>/api/episode/[id]</strong>
-            <p>Récupère les sources de streaming pour un épisode. Inclut maintenant des URLs proxy pour contourner CORS.</p>
+            <p>Récupère les sources de streaming pour un épisode avec extraction automatique des serveurs.</p>
             <div class="example">
-                <strong>Exemple:</strong> <code>/api/episode/one-piece-1090-vostfr</code>
+                <strong>Exemple:</strong> <code>/api/episode/tis-time-for-torture-princess-episode-1-vostfr</code>
                 <pre>{
-  "success": true,
-  "data": {
-    "episodeId": "one-piece-1090-vostfr",
-    "sources": [
-      {
-        "url": "https://anime-sama.fr/catalogue/one-piece/saison1/vostfr/episode-1090",
-        "proxyUrl": "/api/proxy/https%3A%2F%2Fanime-sama.fr%2Fcatalogue%2Fone-piece%2Fsaison1%2Fvostfr%2Fepisode-1090",
-        "embedUrl": "/api/embed/one-piece-1090-vostfr",
-        "server": "Anime-Sama",
-        "language": "VOSTFR",
-        "type": "iframe"
-      }
-    ],
-    "embedUrl": "/api/embed/one-piece-1090-vostfr",
-    "corsInfo": {
-      "note": "Original URLs may have CORS restrictions. Use proxyUrl or embedUrl for direct access."
+  "id": "tis-time-for-torture-princess-episode-1-vostfr",
+  "title": "Tis Time For Torture Princess",
+  "episodeNumber": 1,
+  "sources": [
+    {
+      "url": "https://video.sibnet.ru/shell.php?videoid=5391428",
+      "server": "Serveur 1",
+      "quality": "HD",
+      "language": "VOSTFR",
+      "type": "iframe",
+      "serverIndex": 1
+    },
+    {
+      "url": "https://vidmoly.to/embed-dbx2jrfg1svz.html",
+      "server": "Serveur 2", 
+      "quality": "HD",
+      "language": "VOSTFR",
+      "type": "iframe",
+      "serverIndex": 2
     }
-  }
+  ],
+  "availableServers": ["Serveur 1", "Serveur 2", "Serveur 3", "Serveur 4"],
+  "url": "https://anime-sama.fr/catalogue/tis-time-for-torture-princess/saison1/vostfr"
 }</pre>
             </div>
         </div>
@@ -127,21 +128,28 @@
         <div class="endpoint">
             <span class="method get">GET</span>
             <strong>/api/proxy/[...url]</strong>
-            <p>Proxie les requêtes vers anime-sama.fr en contournant les restrictions CORS.</p>
+            <p>Service proxy pour serveurs de streaming (optionnel - usage limité).</p>
             <div class="example">
-                <strong>Exemple:</strong> <code>/api/proxy/https%3A%2F%2Fanime-sama.fr%2Fcatalogue%2Fone-piece%2Fsaison1%2Fvostfr%2Fepisode-1090</code>
-                <p>Retourne le contenu HTML de la page d'épisode avec les headers CORS appropriés.</p>
+                <strong>Note:</strong> Les iframes utilisent maintenant l'accès direct aux serveurs de streaming.
+                <p>Proxy disponible pour les domaines autorisés : Sibnet, Vidmoly, VK, Sendvid, etc.</p>
             </div>
         </div>
 
         <div class="endpoint">
             <span class="method get">GET</span>
             <strong>/api/embed/[episodeId]</strong>
-            <p>Page d'embed complète prête à utiliser dans une iframe.</p>
+            <p>Page d'embed complète avec lecteur vidéo fonctionnel et sources multiples.</p>
             <div class="example">
-                <strong>Exemple:</strong> <code>/api/embed/one-piece-1090-vostfr</code>
-                <p>Retourne une page HTML complète avec lecteur vidéo intégré et sélecteur de sources.</p>
-                <pre>&lt;iframe src="/api/embed/one-piece-1090-vostfr" width="100%" height="500px"&gt;&lt;/iframe&gt;</pre>
+                <strong>Exemple:</strong> <code>/api/embed/tis-time-for-torture-princess-episode-1-vostfr</code>
+                <p>Retourne une page HTML complète avec:</p>
+                <ul>
+                    <li>Lecteur vidéo avec iframe direct vers serveur de streaming</li>
+                    <li>Sélecteur de sources (Sibnet, Vidmoly, VK, Sendvid)</li>
+                    <li>Fallback automatique si iframe bloqué</li>
+                    <li>Interface responsive et moderne</li>
+                </ul>
+                <pre>&lt;iframe src="/api/embed/tis-time-for-torture-princess-episode-1-vostfr" 
+        width="100%" height="500px" allowfullscreen&gt;&lt;/iframe&gt;</pre>
             </div>
         </div>
 
@@ -175,31 +183,40 @@
             <p>Statut de l'API et statistiques de performance.</p>
         </div>
 
-        <h2>🔧 Utilisation avec CORS</h2>
+        <h2>🎬 Utilisation des lecteurs vidéo</h2>
 
-        <h3>Option 1: Utiliser l'embed (Recommandé)</h3>
+        <h3>Méthode 1: Embed direct (Recommandé)</h3>
         <pre>&lt;iframe 
-  src="https://your-api-domain.replit.app/api/embed/one-piece-1090-vostfr" 
+  src="/api/embed/tis-time-for-torture-princess-episode-1-vostfr" 
   width="100%" 
   height="500px"
   frameborder="0"
   allowfullscreen&gt;
 &lt;/iframe&gt;</pre>
 
-        <h3>Option 2: Utiliser le proxy</h3>
-        <pre>// Récupérer les sources
-const response = await fetch('/api/episode/one-piece-1090-vostfr');
-const data = await response.json();
+        <h3>Méthode 2: API + sources multiples</h3>
+        <pre>// Récupérer les sources d'épisode
+const response = await fetch('/api/episode/tis-time-for-torture-princess-episode-1-vostfr');
+const episode = await response.json();
 
-// Utiliser l'URL proxy au lieu de l'URL originale
-const proxyUrl = data.data.sources[0].proxyUrl;
+// Utiliser la première source disponible
+const primarySource = episode.sources[0];
 
-// Créer l'iframe avec l'URL proxy
+// Créer l'iframe avec accès direct
 const iframe = document.createElement('iframe');
-iframe.src = proxyUrl;
+iframe.src = primarySource.url;
 iframe.width = '100%';
 iframe.height = '500px';
+iframe.allowFullscreen = true;
 document.body.appendChild(iframe);</pre>
+
+        <h3>Serveurs de streaming supportés</h3>
+        <ul>
+            <li><strong>Sibnet:</strong> video.sibnet.ru - Haute qualité, très stable</li>
+            <li><strong>Vidmoly:</strong> vidmoly.to - Rapide et fiable</li>
+            <li><strong>VK Video:</strong> vk.com - Excellente stabilité</li>
+            <li><strong>Sendvid:</strong> sendvid.com - Backup fiable</li>
+        </ul>
 
         <h2>📊 Codes de Statut</h2>
         <ul>
@@ -220,7 +237,8 @@ document.body.appendChild(iframe);</pre>
         </ul>
 
         <hr>
-        <p><em>Documentation mise à jour: Janvier 2025</em></p>
+        <p><em>Documentation mise à jour: 21 juin 2025 - Lecteurs vidéo fonctionnels</em></p>
+        <p><strong>Status:</strong> ✅ Production Ready - Tous endpoints opérationnels</p>
     </div>
 </body>
 </html>
