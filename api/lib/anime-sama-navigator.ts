@@ -376,7 +376,39 @@ export class AnimeSamaNavigator {
               });
               
               const episodesData = episodesResponse.data;
-              const episodeIndex = parseInt(episodeNumber) - 1;
+              // For One Piece, calculate the correct episode index within the current season
+              let episodeIndex = parseInt(episodeNumber) - 1;
+              
+              // Calculate relative episode index for multi-season animes
+              if (animeId === 'one-piece') {
+                // Find which season this episode belongs to
+                const epNum = parseInt(episodeNumber);
+                const seasonMappings = {
+                  1: 1,    // East Blue
+                  2: 62,   // Arabasta  
+                  3: 144,  // Sky Island
+                  4: 207,  // Water Seven
+                  5: 326,  // Thriller Bark
+                  6: 385,  // Marineford
+                  7: 517,  // Fish-Man Island
+                  8: 579,  // Dressrosa
+                  9: 783,  // Zou
+                  10: 890, // Wano
+                  11: 1086 // Egghead
+                };
+                
+                let seasonStart = 1;
+                for (const [season, startEp] of Object.entries(seasonMappings)) {
+                  if (epNum >= startEp) {
+                    seasonStart = startEp;
+                  } else {
+                    break;
+                  }
+                }
+                
+                episodeIndex = epNum - seasonStart;
+                console.log(`🎯 One Piece épisode ${episodeNumber} -> saison commence à ${seasonStart}, index relatif: ${episodeIndex}`);
+              }
               
               const serverArrays = ['eps1', 'eps2', 'eps3', 'eps4'];
               
@@ -970,14 +1002,63 @@ export class AnimeSamaNavigator {
 
   private parseJavaScriptArray(arrayContent: string): string[] {
     const urls: string[] = [];
-    const cleanContent = arrayContent.replace(/\s+/g, ' ').trim();
-    const urlMatches = cleanContent.match(/"([^"]+)"/g) || [];
     
-    for (const match of urlMatches) {
-      const url = match.replace(/"/g, '');
-      if (url.startsWith('http')) {
-        urls.push(url);
+    try {
+      // Method 1: Try to parse as proper JavaScript array
+      const cleanContent = arrayContent
+        .replace(/'/g, '"')  // Replace single quotes with double quotes
+        .replace(/,\s*]/g, ']')  // Remove trailing commas
+        .replace(/,\s*}/g, '}'); // Remove trailing commas in objects
+      
+      try {
+        const parsedArray = JSON.parse('[' + cleanContent + ']');
+        for (const item of parsedArray) {
+          if (typeof item === 'string' && item.startsWith('http')) {
+            urls.push(item);
+          }
+        }
+        if (urls.length > 0) return urls;
+      } catch (jsonError) {
+        // Continue to other methods if JSON parsing fails
       }
+      
+      // Method 2: Extract URLs with comprehensive regex patterns
+      const urlPatterns = [
+        /'(https?:\/\/[^']+)'/g,
+        /"(https?:\/\/[^"]+)"/g,
+        /https?:\/\/[^\s,'"]+/g
+      ];
+      
+      for (const pattern of urlPatterns) {
+        let match;
+        while ((match = pattern.exec(arrayContent)) !== null) {
+          const url = match[1] || match[0];
+          if (url && url.startsWith('http') && url.length > 10) {
+            // Clean up the URL
+            const cleanUrl = url.replace(/[,\]}'"\s]+$/, '');
+            if (!urls.includes(cleanUrl)) {
+              urls.push(cleanUrl);
+            }
+          }
+        }
+      }
+      
+      // Method 3: Handle anime-sama.fr specific multi-line arrays
+      if (urls.length === 0) {
+        const lines = arrayContent.split(/[\n\r]+/);
+        for (const line of lines) {
+          const urlMatch = line.match(/https?:\/\/[^\s,'"]+/);
+          if (urlMatch) {
+            const url = urlMatch[0].replace(/[,\]}'"\s]+$/, '');
+            if (url.length > 10 && !urls.includes(url)) {
+              urls.push(url);
+            }
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.log('Error parsing JavaScript array:', error);
     }
     
     return urls;

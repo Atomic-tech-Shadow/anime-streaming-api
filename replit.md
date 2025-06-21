@@ -135,6 +135,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - June 20, 2025. Migration complete from Replit Agent to Replit environment - solved CORS iframe restrictions with proxy endpoints (/api/proxy/[url]) and embed pages (/api/embed/[episodeId]), enhanced CORS headers for cross-origin compatibility
 - June 20, 2025. Created final corrected documentation (DOCUMENTATION_ANIME_SAMA_FINALE_CORRIGEE.md) integrating all CORS solutions, updated interfaces, and complete implementation guide for anime-sama page with working video playback
 - June 20, 2025. Updated documentation with production API URL (https://api-anime-sama.onrender.com) - cleaned to production-only configuration, removed local development URLs
+- June 21, 2025. Successfully migrated from Replit Agent to Replit environment - fixed streaming source extraction with improved JavaScript array parsing, corrected One Piece episode indexing for multi-season structure, now extracting authentic URLs from anime-sama.fr episodes.js files
 
 ## User Preferences
 
