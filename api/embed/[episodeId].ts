@@ -57,8 +57,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `);
     }
 
-    // Create embed HTML that uses our proxy
-    const proxyUrl = `/api/proxy/${encodeURIComponent(primarySource.url)}`;
+    // Use direct iframe to streaming source (no proxy needed)
+    const directUrl = primarySource.url;
     
     const embedHtml = `
       <!DOCTYPE html>
@@ -120,6 +120,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .source-btn.active {
               background: #007bff;
             }
+            .fallback {
+              background: #333;
+              color: white;
+              padding: 20px;
+              text-align: center;
+              margin: 10px;
+              border-radius: 5px;
+            }
+            .direct-link {
+              color: #007bff;
+              text-decoration: none;
+              font-weight: bold;
+            }
           </style>
         </head>
         <body>
@@ -129,28 +142,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               <br>Server: ${primarySource.server} (${primarySource.language})
             </div>
             <div class="video-container">
-              <iframe src="${proxyUrl}" allowfullscreen></iframe>
+              <iframe src="${directUrl}" allowfullscreen allow="autoplay; fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
             <div class="sources">
               Available sources: 
               ${episodeData.sources.map((source, index) => {
-                const sourceProxyUrl = `/api/proxy/${encodeURIComponent(source.url)}`;
                 const isActive = source.url === primarySource.url;
                 return `<a href="/api/embed/${episodeId}?source=${index}" class="source-btn ${isActive ? 'active' : ''}">${source.server} (${source.language})</a>`;
               }).join(' ')}
             </div>
+            <div class="fallback">
+              Si la vidéo ne se charge pas, <a href="${directUrl}" target="_blank" class="direct-link">cliquez ici pour l'ouvrir directement</a>
+            </div>
           </div>
           <script>
+            // Handle source switching
+            const urlParams = new URLSearchParams(window.location.search);
+            const sourceIndex = urlParams.get('source');
+            
+            if (sourceIndex !== null) {
+              const sources = ${JSON.stringify(episodeData.sources)};
+              const selectedSource = sources[parseInt(sourceIndex)];
+              if (selectedSource) {
+                document.querySelector('iframe').src = selectedSource.url;
+                document.querySelector('.info').innerHTML = 
+                  '${episodeData.animeTitle} - Episode ${episodeData.episodeNumber}<br>Server: ' + 
+                  selectedSource.server + ' (' + selectedSource.language + ')';
+                document.querySelector('.direct-link').href = selectedSource.url;
+              }
+            }
+            
             // Auto-refresh if iframe fails to load
             document.querySelector('iframe').onload = function() {
               console.log('Video loaded successfully');
             };
             
             document.querySelector('iframe').onerror = function() {
-              console.log('Video failed to load, retrying...');
-              setTimeout(() => {
-                location.reload();
-              }, 3000);
+              console.log('Video failed to load, showing fallback...');
+              document.querySelector('.fallback').style.display = 'block';
             };
           </script>
         </body>

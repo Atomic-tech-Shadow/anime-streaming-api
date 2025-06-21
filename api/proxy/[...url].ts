@@ -28,9 +28,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const targetUrl = decodeURIComponent(url.join('/'));
     
-    // Validate that we only proxy anime-sama.fr URLs for security
-    if (!targetUrl.includes('anime-sama.fr') && !targetUrl.includes('streaming.anime-sama.fr')) {
-      return sendError(res, 403, 'Only anime-sama.fr URLs are allowed');
+    // Validate streaming URLs for security - allow known anime streaming servers
+    const allowedDomains = [
+      'anime-sama.fr',
+      'streaming.anime-sama.fr',
+      'video.sibnet.ru',
+      'vidmoly.to',
+      'vk.com',
+      'sendvid.com',
+      'vidoza.net',
+      'streamtape.com',
+      'doodstream.com',
+      'mixdrop.co'
+    ];
+    
+    const isAllowedDomain = allowedDomains.some(domain => targetUrl.includes(domain));
+    if (!isAllowedDomain) {
+      return sendError(res, 403, 'Domain not allowed for proxy');
     }
 
     console.log(`Proxying request to: ${targetUrl}`);
