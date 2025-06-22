@@ -66,6 +66,11 @@ async function generateSeasonEpisodes(
 ): Promise<any[]> {
   const episodes = [];
   
+  // Gestion spéciale pour les films (saison 999)
+  if (seasonNumber === 999) {
+    return await generateFilms(animeId, language);
+  }
+  
   // Utiliser progressInfo pour déterminer le nombre total d'épisodes
   const totalEpisodes = animeDetails.progressInfo?.totalEpisodes || 0;
   
@@ -153,4 +158,75 @@ function getEpisodeRangesForAnime(animeId: string, totalEpisodes: number): Array
   }
   
   return ranges;
+}
+
+async function generateFilms(animeId: string, language: 'VF' | 'VOSTFR'): Promise<any[]> {
+  const films: any[] = [];
+  
+  // Configuration spécifique pour les films One Piece
+  if (animeId === 'one-piece') {
+    const onePieceFilms = [
+      { number: 1, title: "One Piece Film: Clockwork Island Adventure", year: 2001 },
+      { number: 2, title: "One Piece Film: Chopper's Kingdom on the Island of Strange Animals", year: 2002 },
+      { number: 3, title: "One Piece Film: Dead End Adventure", year: 2003 },
+      { number: 4, title: "One Piece Film: The Cursed Holy Sword", year: 2004 },
+      { number: 5, title: "One Piece Film: Baron Omatsuri and the Secret Island", year: 2005 },
+      { number: 6, title: "One Piece Film: The Giant Mechanical Soldier of Karakuri Castle", year: 2006 },
+      { number: 7, title: "One Piece Film: Episode of Alabasta", year: 2007 },
+      { number: 8, title: "One Piece Film: Episode of Chopper Plus", year: 2008 },
+      { number: 9, title: "One Piece Film: Strong World", year: 2009 },
+      { number: 10, title: "One Piece Film: Z", year: 2012 },
+      { number: 11, title: "One Piece Film: Gold", year: 2016 },
+      { number: 12, title: "One Piece Film: Stampede", year: 2019 },
+      { number: 13, title: "One Piece Film: Red", year: 2022 },
+      { number: 14, title: "One Piece Film: The One Piece", year: 2025 }
+    ];
+    
+    onePieceFilms.forEach(film => {
+      const filmId = `${animeId}-film-${film.number}-${language.toLowerCase()}`;
+      films.push({
+        id: filmId,
+        episodeNumber: film.number,
+        title: film.title,
+        language,
+        seasonNumber: 999,
+        available: true,
+        type: 'film',
+        year: film.year,
+        url: `https://anime-sama.fr/catalogue/${animeId}/film/${language.toLowerCase()}/film-${film.number}`,
+        embedUrl: `/api/embed/${filmId}`
+      });
+    });
+    
+    return films;
+  }
+  
+  // Configuration générique pour d'autres animes
+  if (animeId === 'demon-slayer') {
+    const demonSlayerFilms = [
+      { number: 1, title: "Demon Slayer: Mugen Train", year: 2020 },
+      { number: 2, title: "Demon Slayer: To the Swordsmith Village", year: 2023 }
+    ];
+    
+    demonSlayerFilms.forEach(film => {
+      const filmId = `${animeId}-film-${film.number}-${language.toLowerCase()}`;
+      films.push({
+        id: filmId,
+        episodeNumber: film.number,
+        title: film.title,
+        language,
+        seasonNumber: 999,
+        available: true,
+        type: 'film',
+        year: film.year,
+        url: `https://anime-sama.fr/catalogue/${animeId}/film/${language.toLowerCase()}/film-${film.number}`,
+        embedUrl: `/api/embed/${filmId}`
+      });
+    });
+    
+    return films;
+  }
+  
+  // Si aucune configuration spécifique, retourner tableau vide
+  return [];
 }
