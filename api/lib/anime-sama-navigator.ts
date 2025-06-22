@@ -395,79 +395,23 @@ export class AnimeSamaNavigator {
                 console.log(`📊 Structure détectée: ${detectedArraySize} épisodes par saison`);
               }
               
-              // Universal episode index calculation that works for any anime
-              // The key insight: we need to determine which "section" of the anime we're accessing
-              // and calculate the relative position within that section's episodes.js file
-              
-              // First, try to detect the current section URL pattern being used
-              const currentSectionMatch = workingUrl.match(/\/catalogue\/([^\/]+)\/(saison(\d+)|[^\/]+)\/([^\/]+)/);
-              let sectionStartEpisode = 1;
-              
-              if (currentSectionMatch) {
-                const sectionType = currentSectionMatch[2];
-                
-                // Try to infer the starting episode for this section
-                if (sectionType && sectionType.startsWith('saison')) {
-                  const seasonNum = parseInt(currentSectionMatch[3]);
-                  
-                  // For multi-season anime, estimate section start based on detected array size
-                  if (detectedArraySize > 0 && seasonNum > 1) {
-                    sectionStartEpisode = ((seasonNum - 1) * detectedArraySize) + 1;
-                  }
-                } else {
-                  // For named sections (like saga11, season2, etc.), try to infer from episode number
-                  // If we're accessing episode 1087 but array size is 61, this is likely section starting at ~1087
-                  if (detectedArraySize > 0 && epNum > detectedArraySize) {
-                    const possibleSectionStarts = [];
-                    
-                    // Generate possible section boundaries
-                    for (let i = 1; i <= epNum; i += detectedArraySize) {
-                      possibleSectionStarts.push(i);
-                    }
-                    
-                    // Find the section that contains our episode
-                    for (let i = possibleSectionStarts.length - 1; i >= 0; i--) {
-                      if (epNum >= possibleSectionStarts[i]) {
-                        sectionStartEpisode = possibleSectionStarts[i];
-                        break;
-                      }
-                    }
-                  }
-                }
+              // SYSTÈME UNIVERSEL SIMPLIFIÉ
+              // Utilise la structure détectée dynamiquement sans configurations spécifiques
+              if (detectedArraySize > 0) {
+                // Si l'épisode demandé dépasse la taille du tableau, utiliser modulo
+                episodeIndex = (epNum - 1) % detectedArraySize;
+              } else {
+                // Fallback standard si pas de taille détectée
+                episodeIndex = epNum - 1;
               }
               
-              // Calculate the episode index within the current section
-              episodeIndex = epNum - sectionStartEpisode;
-              
-              // Ensure the index is within reasonable bounds
+              // Assurer que l'index est valide
               if (episodeIndex < 0) {
-                episodeIndex = epNum - 1; // Fallback to standard indexing
+                episodeIndex = 0;
               }
               
-              // If index is still too large for detected array, use modulo as last resort
-              if (detectedArraySize > 0 && episodeIndex >= detectedArraySize) {
-                episodeIndex = episodeIndex % detectedArraySize;
-              }
-              
-              console.log(`🎯 ${animeId} épisode ${episodeNumber} -> section starts at ${sectionStartEpisode}, index: ${episodeIndex} (array size: ${detectedArraySize})`);
-              
-              // Additional safety check: if index is still unreasonable, try alternative calculations
-              if (episodeIndex < 0 || episodeIndex > 500) {
-                const fallbackStrategies = [
-                  { name: 'direct', index: epNum - 1 },
-                  { name: 'section-relative', index: (epNum - 1) % Math.max(detectedArraySize, 25) },
-                  { name: 'mod50', index: (epNum - 1) % 50 },
-                  { name: 'mod25', index: (epNum - 1) % 25 }
-                ];
-                
-                for (const strategy of fallbackStrategies) {
-                  if (strategy.index >= 0 && strategy.index < 200) {
-                    episodeIndex = strategy.index;
-                    console.log(`🔄 Fallback ${strategy.name}: épisode ${episodeNumber} -> index: ${episodeIndex}`);
-                    break;
-                  }
-                }
-              }
+              console.log(`Universal episode mapping: episode ${episodeNumber} -> index ${episodeIndex} (array size: ${detectedArraySize})`);
+
               
               const serverArrays = ['eps1', 'eps2', 'eps3', 'eps4'];
               
