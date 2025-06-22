@@ -21,29 +21,25 @@ API REST Node.js qui scrape anime-sama.fr pour fournir des fonctionnalités de r
 - **Documentation** - Interface web interactive
 - **Rate limiting** - Protection contre le spam
 
-## Installation
+## Installation Rapide
 
-### Prérequis
-- Node.js 20+
-- npm
+Voir le [Guide de Configuration Complet](CONFIGURATION_GUIDE.md) pour tous les détails.
 
-### 1. Cloner le projet
+### Installation en 3 étapes
 ```bash
-git clone https://github.com/votre-username/anime-sama-api.git
-cd anime-sama-api
-```
+# 1. Cloner le projet
+git clone <repository-url> && cd anime-sama-api
 
-### 2. Installer les dépendances
-```bash
+# 2. Installer les dépendances
 npm install
-```
 
-### 3. Démarrer le serveur
-```bash
+# 3. Démarrer le serveur
 npm run dev
 ```
 
 L'API sera disponible sur `http://localhost:5000`
+
+**Aucune configuration supplémentaire requise** - Le système universel fonctionne immédiatement.
 
 ## Endpoints API
 
@@ -158,6 +154,13 @@ curl "http://localhost:5000/api/episode/demon-slayer-episode-1-vostfr"
 - **Données Précises**: Nombre d'épisodes exact extrait du site source
 - **Évolutif**: Fonctionne automatiquement avec les nouveaux animes ajoutés sur anime-sama.fr
 - **Fiable**: Fallback intelligent si une URL ne fonctionne pas
+
+## Documentation Complète
+
+- 📖 **[Guide de Configuration](CONFIGURATION_GUIDE.md)** - Installation et configuration détaillée
+- 🚀 **[Système Universel](UNIVERSAL_SYSTEM.md)** - Guide technique du système automatique
+- 🌐 **[Documentation Interactive](http://localhost:5000/docs)** - Tests et exemples en direct
+- 📋 **[replit.md](replit.md)** - Architecture et historique du projet
 
 ## Avertissement
 

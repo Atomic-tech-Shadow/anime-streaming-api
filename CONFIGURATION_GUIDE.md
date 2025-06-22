@@ -1,337 +1,279 @@
-# Guide de Configuration API Anime Sama
+# Guide de Configuration - Anime-Sama API
 
-## URL de Production
-**API déployée:** https://api-anime-sama.onrender.com
+## Installation et Configuration
 
-## Table des Matières
-1. [Configuration Requise](#configuration-requise)
-2. [Variables d'Environnement](#variables-denvironnement)
-3. [Endpoints Principaux](#endpoints-principaux)
-4. [Résolution des Problèmes Courants](#résolution-des-problèmes-courants)
-5. [Tests de Fonctionnement](#tests-de-fonctionnement)
-6. [Optimisations de Performance](#optimisations-de-performance)
+### Prérequis
 
-## Configuration Requise
+- **Node.js 20+** - Runtime JavaScript
+- **npm** - Gestionnaire de paquets
+- **TypeScript** - Compilation (installé automatiquement)
 
-### Dépendances Node.js
-```json
-{
-  "dependencies": {
-    "@vercel/node": "^5.3.0",
-    "axios": "^1.10.0",
-    "cheerio": "^1.1.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "tsx": "^4.20.3",
-    "zod": "^3.25.67"
-  }
-}
+### Installation Rapide
+
+#### 1. Cloner le projet
+```bash
+git clone <repository-url>
+cd anime-sama-api
 ```
 
-### Installation
+#### 2. Installation des dépendances
 ```bash
 npm install
-npm run dev
 ```
 
-## Variables d'Environnement
+#### 3. Démarrage du serveur
+```bash
+# Mode développement
+npm run dev
 
-Créer un fichier `.env` avec les configurations suivantes :
+# Mode production
+npm run build
+npm start
+```
+
+Le serveur sera accessible sur `http://localhost:5000`
+
+## Configuration du Système Universel
+
+### Fonctionnement Automatique
+
+L'API utilise un **système universel** qui ne nécessite aucune configuration manuelle :
+
+- ✅ **Détection automatique** des animes
+- ✅ **Extraction des vraies données** depuis anime-sama.fr
+- ✅ **Zéro configuration** par anime
+- ✅ **Fallback intelligent** pour les cas spéciaux
+
+### Variables d'Environnement
+
+Créer un fichier `.env` (optionnel) :
 
 ```env
-# Configuration du serveur
+# Port du serveur (par défaut: 5000)
 PORT=5000
-NODE_ENV=production
 
-# Configuration du cache
+# Mode d'environnement
+NODE_ENV=development
+
+# Configuration du cache (optionnel)
 CACHE_TTL=300000
-CACHE_ENABLED=true
 
-# Limites de taux
+# Configuration rate limiting (optionnel)
 RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW=60000
-
-# Timeouts et retry
-REQUEST_TIMEOUT=20000
-MAX_RETRY_ATTEMPTS=3
-
-# Sécurité
-SESSION_SECRET=your_secret_key_here
-SESSION_ROTATION_INTERVAL=1800000
-MAX_REQUESTS_PER_SESSION=50
-
-# Base URL
-BASE_URL=https://anime-sama.fr
-
-# Authentification passive
-PASSIVE_AUTH_ENABLED=true
-AD_BLOCKING_ENABLED=true
 ```
 
-## Endpoints Principaux
+## Structure du Projet
 
-### 1. Santé de l'API
-```http
-GET /api/health
 ```
-**Réponse:**
-```json
-{
-  "success": true,
-  "data": {
-    "status": "healthy",
-    "service": "anime-sama-api",
-    "version": "2.0.0"
-  }
-}
-```
-
-### 2. Recherche d'Anime
-```http
-GET /api/search?q=one+piece
+anime-sama-api/
+├── api/                      # Endpoints API
+│   ├── search.ts            # Recherche d'animes
+│   ├── anime/[id].ts        # Détails d'un anime
+│   ├── episode/[id].ts      # Sources de streaming
+│   ├── seasons.ts           # Épisodes par saison
+│   ├── lib/                 # Bibliothèques core
+│   │   ├── anime-sama-navigator.ts    # Navigation intelligente
+│   │   ├── core.ts                    # Utilitaires principaux
+│   │   └── authentic-anime-sama-scraper.ts
+│   └── ...
+├── server/                   # Serveur Express
+│   └── index.ts             # Point d'entrée principal
+├── package.json             # Dépendances
+└── README.md               # Documentation
 ```
 
-### 3. Détails d'un Anime
-```http
-GET /api/anime/{animeId}
-```
+## Configuration du Déploiement
 
-### 4. Épisodes par Saison
-```http
-GET /api/seasons?animeId=one-piece&season=1&language=vostfr
-```
+### Développement Local
 
-### 5. Catalogue
-```http
-GET /api/catalogue?page=1&search=naruto
-```
-
-### 6. Contenu Spécialisé
-```http
-GET /api/content?animeId=one-piece&type=films&language=vostfr
-```
-
-## Résolution des Problèmes Courants
-
-### Problème 1: API retourne des épisodes vides
-
-**Symptôme:**
-```json
-{
-  "episodes": [],
-  "totalEpisodes": 0
-}
-```
-
-**Solution:**
-L'API a été corrigée avec un système de fallback intelligent qui :
-- Détecte automatiquement le nombre total d'épisodes
-- Utilise une base de données de référence pour les animes populaires
-- Force un minimum de 12 épisodes par défaut
-
-**Test de vérification:**
 ```bash
-curl "https://api-anime-sama.onrender.com/api/seasons?animeId=one-piece&season=1&language=vostfr"
+# Démarrage avec hot-reload
+npm run dev
+
+# Vérification TypeScript
+npm run check
+
+# Build de production
+npm run build
 ```
 
-### Problème 2: Endpoints de fallback manquants
+### Déploiement Replit
 
-**Symptôme:**
-```
-Catalogue endpoint failed
-```
+1. **Configuration automatique** - Le projet est pré-configuré pour Replit
+2. **Port 5000** - Binding automatique sur 0.0.0.0:5000
+3. **Workflow configuré** - Démarrage automatique via "Start application"
 
-**Solution:**
-Tous les endpoints de fallback sont maintenant implémentés :
-- `/api/catalogue` - Catalogue avec fallback
-- `/api/content` - Contenu avec génération automatique
-- Système de retry automatique
+### Déploiement Vercel
 
-### Problème 3: Détection de langues défaillante
-
-**Symptôme:**
-```
-Détecte [] langues disponibles
-```
-
-**Solution:**
-- Logique de détection améliorée
-- Fallback automatique vers VOSTFR
-- Validation stricte des épisodes avant retour
-
-### Problème 4: Mauvais mapping d'épisodes (One Piece)
-
-**Symptôme:**
-```
-Episode 1087 (Egghead) joue du contenu de la Guerre au Sommet
-```
-
-**Solution:**
-- Correction des URLs pour One Piece saisons 11+ (Egghead arc)
-- Episode 1087+ maintenant mappé vers saison11/vostfr
-- Mapping précis par arc: East Blue → Egghead
-
-**Test de vérification:**
 ```bash
-curl "https://api-anime-sama.onrender.com/api/episode/one-piece-episode-1087-vostfr"
-# Doit retourner des sources depuis saison11 (Egghead), pas saison6 (Guerre)
+# Installation Vercel CLI
+npm i -g vercel
+
+# Déploiement
+vercel --prod
 ```
 
-### Problème 4: Timeouts et erreurs de réseau
+### Configuration Docker (Optionnel)
 
-**Configuration recommandée:**
-```javascript
-const axiosConfig = {
-  timeout: 20000,
-  maxRetries: 3,
-  retryDelay: 1000,
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-  }
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 5000
+CMD ["npm", "start"]
+```
+
+## Endpoints de l'API
+
+### Endpoints Principaux
+
+| Endpoint | Méthode | Description | Exemple |
+|----------|---------|-------------|---------|
+| `/api/search` | GET | Recherche d'animes | `?query=naruto` |
+| `/api/anime/{id}` | GET | Détails d'un anime | `/api/anime/one-piece` |
+| `/api/seasons` | GET | Épisodes par saison | `?animeId=demon-slayer&season=1` |
+| `/api/episode/{id}` | GET | Sources de streaming | `/api/episode/naruto-episode-1-vostfr` |
+| `/api/embed/{id}` | GET | Page de lecture | `/api/embed/naruto-episode-1-vostfr` |
+
+### Endpoints Utilitaires
+
+| Endpoint | Description |
+|----------|-------------|
+| `/api/health` | État de l'API |
+| `/api/status` | Statistiques détaillées |
+| `/docs` | Documentation interactive |
+| `/demo` | Page de démonstration |
+
+## Configuration Avancée
+
+### Cache Personnalisé
+
+```typescript
+// api/lib/core.ts
+export const cacheConfig = {
+  ttl: process.env.CACHE_TTL || 300000, // 5 minutes
+  maxSize: 1000 // Nombre maximum d'entrées
 };
 ```
 
-## Tests de Fonctionnement
+### Rate Limiting
 
-### Test Complet de l'API
-
-```bash
-# 1. Test de santé
-curl "https://api-anime-sama.onrender.com/api/health"
-
-# 2. Test de recherche
-curl "https://api-anime-sama.onrender.com/api/search?q=one+piece"
-
-# 3. Test des détails d'anime
-curl "https://api-anime-sama.onrender.com/api/anime/one-piece"
-
-# 4. Test des épisodes (critique)
-curl "https://api-anime-sama.onrender.com/api/seasons?animeId=one-piece&season=1&language=vostfr"
-
-# 5. Test du catalogue
-curl "https://api-anime-sama.onrender.com/api/catalogue"
-
-# 6. Test du contenu spécialisé
-curl "https://api-anime-sama.onrender.com/api/content?animeId=one-piece&type=films&language=vostfr"
-```
-
-### Script de Test Automatisé
-
-```javascript
-const testEndpoints = async () => {
-  const baseUrl = 'https://api-anime-sama.onrender.com';
-  
-  const tests = [
-    { name: 'Health Check', url: '/api/health' },
-    { name: 'Search', url: '/api/search?q=naruto' },
-    { name: 'Anime Details', url: '/api/anime/one-piece' },
-    { name: 'Episodes', url: '/api/seasons?animeId=one-piece&season=1&language=vostfr' },
-    { name: 'Catalogue', url: '/api/catalogue' }
-  ];
-  
-  for (const test of tests) {
-    try {
-      const response = await fetch(baseUrl + test.url);
-      const data = await response.json();
-      console.log(`✅ ${test.name}: ${data.success ? 'OK' : 'FAILED'}`);
-    } catch (error) {
-      console.log(`❌ ${test.name}: ERROR`);
-    }
-  }
+```typescript
+// Configuration dans core.ts
+const rateLimitConfig = {
+  max: process.env.RATE_LIMIT_MAX || 100,
+  windowMs: process.env.RATE_LIMIT_WINDOW || 60000
 };
 ```
 
-## Optimisations de Performance
+### Headers CORS
 
-### 1. Cache Redis (Recommandé pour Production)
-```javascript
-// Configuration Redis pour mise en cache
-const redis = require('redis');
-const client = redis.createClient({
-  url: process.env.REDIS_URL
-});
+```typescript
+// Configuration automatique dans server/index.ts
+res.setHeader('Access-Control-Allow-Origin', '*');
+res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Authorization');
 ```
-
-### 2. Rate Limiting
-```javascript
-// Implémenté automatiquement
-// 100 requêtes par minute par IP
-// Configuration dans les variables d'environnement
-```
-
-### 3. Compression
-```javascript
-app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-```
-
-### 4. Headers de Cache
-```javascript
-// Automatiquement configurés
-Cache-Control: public, max-age=300
-ETag: "hash-du-contenu"
-```
-
-## Architecture de Fallback
-
-### Niveau 1: Scraping Principal
-- Utilise `anime-sama-navigator.ts`
-- Extraction directe depuis anime-sama.fr
-
-### Niveau 2: Scraper Authentique
-- Utilise `authentic-anime-sama-scraper.ts`
-- Méthode alternative de scraping
-
-### Niveau 3: Base de Données Locale
-- Catalogue prédéfini pour animes populaires
-- Garantit toujours une réponse
-
-### Niveau 4: Génération Automatique
-- Création de contenu basique
-- Évite les erreurs 500
 
 ## Monitoring et Logs
 
+### Logs Automatiques
+
+L'API génère automatiquement des logs détaillés :
+
+```
+🔍 Recherche: "naruto"
+📖 Consultation: one-piece
+📺 12 saison(s) détectée(s) pour one-piece
+✅ Found 26 episodes at https://anime-sama.fr/catalogue/demon-slayer/saison1/vostfr/episodes.js
+```
+
+### Endpoints de Monitoring
+
+```bash
+# Vérifier l'état de l'API
+curl http://localhost:5000/api/health
+
+# Statistiques détaillées
+curl http://localhost:5000/api/status
+```
+
+## Dépannage
+
+### Problèmes Courants
+
+#### Port déjà utilisé
+```bash
+# Changer le port
+PORT=3000 npm run dev
+```
+
+#### Erreurs TypeScript
+```bash
+# Vérifier les types
+npm run check
+
+# Nettoyer et réinstaller
+rm -rf node_modules package-lock.json
+npm install
+```
+
+#### Problèmes de scraping
+```bash
+# Tester un endpoint spécifique
+curl "http://localhost:5000/api/health"
+
+# Vérifier les logs pour les détails
+```
+
 ### Logs de Debug
-```javascript
-// Activation des logs détaillés
+
+Activer les logs détaillés :
+
+```env
 NODE_ENV=development
 DEBUG=anime-sama:*
 ```
 
-### Métriques à Surveiller
-- Temps de réponse des endpoints
-- Taux d'erreur par endpoint
-- Utilisation du cache
-- Fréquence des fallbacks
+## Sécurité
 
-## Support et Maintenance
+### Headers de Sécurité
 
-### Commandes Utiles
+L'API configure automatiquement :
+- CORS pour les requêtes cross-origin
+- Rate limiting par IP
+- Validation des paramètres
+- Headers de sécurité standard
+
+### Bonnes Pratiques
+
+- ✅ Utiliser HTTPS en production
+- ✅ Configurer un reverse proxy (nginx)
+- ✅ Monitorer les logs d'erreur
+- ✅ Respecter les conditions d'anime-sama.fr
+
+## Support
+
+### Documentation
+- **README.md** - Guide principal
+- **UNIVERSAL_SYSTEM.md** - Système universel
+- **/docs** - Documentation interactive
+- **replit.md** - Historique et architecture
+
+### Endpoints de Test
 ```bash
-# Redémarrer l'API
-npm run dev
+# Tester la recherche
+curl "http://localhost:5000/api/search?query=demon+slayer"
 
-# Vérifier les logs
-npm run logs
+# Tester les épisodes
+curl "http://localhost:5000/api/seasons?animeId=chainsaw-man&season=1&language=vostfr"
 
-# Test de performance
-npm run test:performance
+# Tester le streaming
+curl "http://localhost:5000/api/episode/demon-slayer-episode-1-vostfr"
 ```
 
-### Contacts
-- Issues GitHub: Pour les bugs techniques
-- Documentation: Ce fichier pour les configurations
-
-## Conclusion
-
-Cette configuration garantit une API robuste avec :
-- ✅ Zéro épisode vide grâce aux fallbacks intelligents
-- ✅ Tous les endpoints fonctionnels
-- ✅ Détection de langues fiable
-- ✅ Gestion d'erreurs complète
-- ✅ Performance optimisée
-
-L'API est maintenant prête pour la production à l'adresse :
-**https://api-anime-sama.onrender.com**
+L'API est conçue pour fonctionner de manière autonome avec une configuration minimale. Le système universel s'adapte automatiquement à tous les animes disponibles sur anime-sama.fr.
