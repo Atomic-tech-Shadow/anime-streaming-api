@@ -320,14 +320,11 @@ export class AnimeSamaNavigator {
     const sources: NavigatorStreamingSource[] = [];
     
     try {
-      // Multiple URL patterns to try for better compatibility
-      const possibleUrls = [
-        `${this.baseUrl}/catalogue/${animeId}/saison1/${language.toLowerCase()}`,
-        `${this.baseUrl}/catalogue/${animeId}/${language.toLowerCase()}`,
-        `${this.baseUrl}/catalogue/${animeId}/saison1/vf`,
-        `${this.baseUrl}/catalogue/${animeId}/vf`,
-        `${this.baseUrl}/catalogue/${animeId}/`
-      ];
+      // Smart section detection based on episode number
+      const epNum = parseInt(episodeNumber);
+      const languageUpper = language.toUpperCase();
+      const validLanguage = (languageUpper === 'VF' || languageUpper === 'VOSTFR') ? languageUpper : 'VOSTFR';
+      const possibleUrls = this.buildSmartSectionUrls(animeId, validLanguage, epNum);
       
       let workingUrl = null;
       let cleanedData = '';
@@ -393,47 +390,75 @@ export class AnimeSamaNavigator {
                 console.log(`📊 Structure détectée: ${detectedArraySize} épisodes par saison`);
               }
               
-              // Calculate the best episode index with One Piece specific correction
-              if (animeId === 'one-piece' && epNum >= 1087) {
-                // One Piece Saga 11 (Egghead) specific correction
-                // Episodes 1087+ should map directly to array indices starting from 0
-                episodeIndex = epNum - 1087; // Start from index 0 for episode 1087
-                console.log(`🎯 One Piece Saga 11: épisode ${episodeNumber} -> index direct: ${episodeIndex}`);
-              } else if (animeId === 'one-piece' && epNum >= 890) {
-                // One Piece Saga 10 (Pays des Wa)
-                episodeIndex = epNum - 890;
-                console.log(`🎯 One Piece Saga 10: épisode ${episodeNumber} -> index saga: ${episodeIndex}`);
-              } else if (animeId === 'one-piece' && epNum >= 747) {
-                // One Piece Saga 9 (Ile Tougato)
-                episodeIndex = epNum - 747;
-                console.log(`🎯 One Piece Saga 9: épisode ${episodeNumber} -> index saga: ${episodeIndex}`);
-              } else if (animeId === 'one-piece' && epNum >= 575) {
-                // One Piece Saga 8 (Dressrosa)
-                episodeIndex = epNum - 575;
-                console.log(`🎯 One Piece Saga 8: épisode ${episodeNumber} -> index saga: ${episodeIndex}`);
-              } else if (detectedArraySize > 0 && epNum > detectedArraySize) {
-                // Multi-season anime: calculate relative position
-                episodeIndex = (epNum - 1) % detectedArraySize;
-                console.log(`🎯 ${animeId} épisode ${episodeNumber} -> multi-saisons (${detectedArraySize} éps/saison), index relatif: ${episodeIndex}`);
-              } else if (epNum <= detectedArraySize || detectedArraySize === 0) {
-                // Single season anime or episode within detected range
-                episodeIndex = epNum - 1;
-                console.log(`🎯 ${animeId} épisode ${episodeNumber} -> saison unique, index: ${episodeIndex}`);
-              } else {
-                // Fallback: try standard approaches
-                const strategies = [
-                  { name: 'standard', index: epNum - 1 },
-                  { name: 'mod25', index: (epNum - 1) % 25 },
-                  { name: 'mod30', index: (epNum - 1) % 30 },
+              // Universal episode index calculation that works for any anime
+              // The key insight: we need to determine which "section" of the anime we're accessing
+              // and calculate the relative position within that section's episodes.js file
+              
+              // First, try to detect the current section URL pattern being used
+              const currentSectionMatch = workingUrl.match(/\/catalogue\/([^\/]+)\/(saison(\d+)|[^\/]+)\/([^\/]+)/);
+              let sectionStartEpisode = 1;
+              
+              if (currentSectionMatch) {
+                const sectionType = currentSectionMatch[2];
+                
+                // Try to infer the starting episode for this section
+                if (sectionType && sectionType.startsWith('saison')) {
+                  const seasonNum = parseInt(currentSectionMatch[3]);
+                  
+                  // For multi-season anime, estimate section start based on detected array size
+                  if (detectedArraySize > 0 && seasonNum > 1) {
+                    sectionStartEpisode = ((seasonNum - 1) * detectedArraySize) + 1;
+                  }
+                } else {
+                  // For named sections (like saga11, season2, etc.), try to infer from episode number
+                  // If we're accessing episode 1087 but array size is 61, this is likely section starting at ~1087
+                  if (detectedArraySize > 0 && epNum > detectedArraySize) {
+                    const possibleSectionStarts = [];
+                    
+                    // Generate possible section boundaries
+                    for (let i = 1; i <= epNum; i += detectedArraySize) {
+                      possibleSectionStarts.push(i);
+                    }
+                    
+                    // Find the section that contains our episode
+                    for (let i = possibleSectionStarts.length - 1; i >= 0; i--) {
+                      if (epNum >= possibleSectionStarts[i]) {
+                        sectionStartEpisode = possibleSectionStarts[i];
+                        break;
+                      }
+                    }
+                  }
+                }
+              }
+              
+              // Calculate the episode index within the current section
+              episodeIndex = epNum - sectionStartEpisode;
+              
+              // Ensure the index is within reasonable bounds
+              if (episodeIndex < 0) {
+                episodeIndex = epNum - 1; // Fallback to standard indexing
+              }
+              
+              // If index is still too large for detected array, use modulo as last resort
+              if (detectedArraySize > 0 && episodeIndex >= detectedArraySize) {
+                episodeIndex = episodeIndex % detectedArraySize;
+              }
+              
+              console.log(`🎯 ${animeId} épisode ${episodeNumber} -> section starts at ${sectionStartEpisode}, index: ${episodeIndex} (array size: ${detectedArraySize})`);
+              
+              // Additional safety check: if index is still unreasonable, try alternative calculations
+              if (episodeIndex < 0 || episodeIndex > 500) {
+                const fallbackStrategies = [
+                  { name: 'direct', index: epNum - 1 },
+                  { name: 'section-relative', index: (epNum - 1) % Math.max(detectedArraySize, 25) },
                   { name: 'mod50', index: (epNum - 1) % 50 },
-                  { name: 'mod12', index: (epNum - 1) % 12 }
+                  { name: 'mod25', index: (epNum - 1) % 25 }
                 ];
                 
-                // Use the strategy that puts us within reasonable bounds
-                for (const strategy of strategies) {
+                for (const strategy of fallbackStrategies) {
                   if (strategy.index >= 0 && strategy.index < 200) {
                     episodeIndex = strategy.index;
-                    console.log(`🎯 ${animeId} épisode ${episodeNumber} -> stratégie ${strategy.name}, index: ${episodeIndex}`);
+                    console.log(`🔄 Fallback ${strategy.name}: épisode ${episodeNumber} -> index: ${episodeIndex}`);
                     break;
                   }
                 }
@@ -702,6 +727,54 @@ export class AnimeSamaNavigator {
   }
 
   // Méthodes utilitaires
+  private buildSmartSectionUrls(animeId: string, language: 'VF' | 'VOSTFR', episodeNumber: number): string[] {
+    const lang = language.toLowerCase();
+    const urls: string[] = [];
+    
+    // Smart section detection based on episode number patterns
+    if (episodeNumber > 1000) {
+      // Very high episode numbers - likely saga-based structure
+      const sagaNum = Math.ceil((episodeNumber - 1000) / 100) + 10;
+      urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${sagaNum}/${lang}`);
+      
+      // Alternative patterns for high episodes
+      urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${Math.ceil(episodeNumber / 200)}/${lang}`);
+      urls.push(`${this.baseUrl}/catalogue/${animeId}/arc${sagaNum}/${lang}`);
+    }
+    
+    if (episodeNumber > 500) {
+      // High episode numbers - try saga or season-based
+      const sagaNum = Math.ceil(episodeNumber / 100);
+      urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${sagaNum}/${lang}`);
+      urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${Math.ceil(episodeNumber / 100)}/${lang}`);
+      urls.push(`${this.baseUrl}/catalogue/${animeId}/arc${sagaNum}/${lang}`);
+    }
+    
+    if (episodeNumber > 100) {
+      // Medium episode numbers
+      const seasonNum = Math.ceil(episodeNumber / 50);
+      urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${seasonNum}/${lang}`);
+      urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${Math.ceil(episodeNumber / 100)}/${lang}`);
+    }
+    
+    // Standard season patterns (always try these)
+    for (let i = 1; i <= 5; i++) {
+      urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${i}/${lang}`);
+    }
+    
+    // Alternative naming conventions
+    urls.push(
+      `${this.baseUrl}/catalogue/${animeId}/season1/${lang}`,
+      `${this.baseUrl}/catalogue/${animeId}/s1/${lang}`,
+      `${this.baseUrl}/catalogue/${animeId}/${lang}`,
+      `${this.baseUrl}/catalogue/${animeId}/episodes/${lang}`,
+      `${this.baseUrl}/catalogue/${animeId}/vf-vostfr/${lang}`
+    );
+    
+    // Remove duplicates and return
+    return [...new Set(urls)];
+  }
+
   private parseEpisodeId(episodeId: string): { animeId: string; episodeNumber: string; language: string } {
     // Support flexible episode ID formats:
     // naruto-episode-1-vf, naruto-1, naruto-ep1-vf, etc.
