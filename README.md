@@ -39,6 +39,8 @@ npm run dev
 
 L'API sera disponible sur `http://localhost:5000`
 
+**API de Production Disponible** : `https://api-anime-sama.onrender.com`
+
 **Aucune configuration supplémentaire requise** - Le système universel fonctionne immédiatement.
 
 ## Endpoints API
@@ -133,17 +135,29 @@ MIT License
 
 ### Recherche d'anime
 ```bash
+# Production
+curl "https://api-anime-sama.onrender.com/api/search?query=jujutsu+kaisen"
+
+# Local
 curl "http://localhost:5000/api/search?query=jujutsu+kaisen"
 ```
 
 ### Obtenir les épisodes avec données réelles
 ```bash
+# Production
+curl "https://api-anime-sama.onrender.com/api/seasons?animeId=chainsaw-man&season=1&language=vostfr"
+
+# Local
 curl "http://localhost:5000/api/seasons?animeId=chainsaw-man&season=1&language=vostfr"
 # Retourne 12 épisodes réels extraits depuis anime-sama.fr
 ```
 
 ### Streaming d'un épisode
 ```bash
+# Production
+curl "https://api-anime-sama.onrender.com/api/episode/demon-slayer-episode-1-vostfr"
+
+# Local
 curl "http://localhost:5000/api/episode/demon-slayer-episode-1-vostfr"
 # Sources multiples extraites automatiquement
 ```
@@ -159,7 +173,7 @@ curl "http://localhost:5000/api/episode/demon-slayer-episode-1-vostfr"
 
 - 📖 **[Guide de Configuration](CONFIGURATION_GUIDE.md)** - Installation et configuration détaillée
 - 🚀 **[Système Universel](UNIVERSAL_SYSTEM.md)** - Guide technique du système automatique
-- 🌐 **[Documentation Interactive](http://localhost:5000/docs)** - Tests et exemples en direct
+- 🌐 **[Documentation Interactive](https://api-anime-sama.onrender.com/docs)** - Tests et exemples en direct
 - 📋 **[replit.md](replit.md)** - Architecture et historique du projet
 
 ## Avertissement

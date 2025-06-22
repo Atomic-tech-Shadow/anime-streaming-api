@@ -33,6 +33,8 @@ npm start
 
 Le serveur sera accessible sur `http://localhost:5000`
 
+**API de Production** : `https://api-anime-sama.onrender.com`
+
 ## Configuration du Système Universel
 
 ### Fonctionnement Automatique
@@ -195,10 +197,12 @@ L'API génère automatiquement des logs détaillés :
 ### Endpoints de Monitoring
 
 ```bash
-# Vérifier l'état de l'API
-curl http://localhost:5000/api/health
+# Production
+curl https://api-anime-sama.onrender.com/api/health
+curl https://api-anime-sama.onrender.com/api/status
 
-# Statistiques détaillées
+# Local
+curl http://localhost:5000/api/health
 curl http://localhost:5000/api/status
 ```
 
@@ -265,6 +269,23 @@ L'API configure automatiquement :
 - **replit.md** - Historique et architecture
 
 ### Endpoints de Test
+
+#### Production (Render)
+```bash
+# Tester la recherche
+curl "https://api-anime-sama.onrender.com/api/search?query=demon+slayer"
+
+# Tester les épisodes
+curl "https://api-anime-sama.onrender.com/api/seasons?animeId=chainsaw-man&season=1&language=vostfr"
+
+# Tester le streaming
+curl "https://api-anime-sama.onrender.com/api/episode/demon-slayer-episode-1-vostfr"
+
+# Documentation interactive
+open https://api-anime-sama.onrender.com/docs
+```
+
+#### Local
 ```bash
 # Tester la recherche
 curl "http://localhost:5000/api/search?query=demon+slayer"

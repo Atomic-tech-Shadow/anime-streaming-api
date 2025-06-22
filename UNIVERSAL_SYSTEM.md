@@ -73,7 +73,11 @@ Le système teste plusieurs patterns d'URL pour chaque anime :
 
 ### `/api/seasons`
 ```bash
-GET /api/seasons?animeId=chainsaw-man&season=1&language=vostfr
+# Production
+GET https://api-anime-sama.onrender.com/api/seasons?animeId=chainsaw-man&season=1&language=vostfr
+
+# Local
+GET http://localhost:5000/api/seasons?animeId=chainsaw-man&season=1&language=vostfr
 
 # Réponse avec données réelles :
 {
@@ -84,7 +88,11 @@ GET /api/seasons?animeId=chainsaw-man&season=1&language=vostfr
 
 ### `/api/anime/{id}`
 ```bash
-GET /api/anime/jujutsu-kaisen
+# Production
+GET https://api-anime-sama.onrender.com/api/anime/jujutsu-kaisen
+
+# Local
+GET http://localhost:5000/api/anime/jujutsu-kaisen
 
 # Détection automatique :
 {
@@ -110,22 +118,32 @@ Le système affiche des logs détaillés pour suivre le processus :
 
 ### Utilisation Simple
 ```javascript
+// Configuration de l'API
+const API_BASE = 'https://api-anime-sama.onrender.com'; // Production
+// const API_BASE = 'http://localhost:5000'; // Local
+
 // Rechercher un anime
-const searchResults = await fetch('/api/search?query=demon+slayer');
+const searchResults = await fetch(`${API_BASE}/api/search?query=demon+slayer`);
 
 // Obtenir les épisodes avec données réelles
-const episodes = await fetch('/api/seasons?animeId=demon-slayer&season=1&language=vostfr');
+const episodes = await fetch(`${API_BASE}/api/seasons?animeId=demon-slayer&season=1&language=vostfr`);
 
 // Le système détecte automatiquement le bon nombre d'épisodes
-console.log(episodes.totalEpisodes); // Nombre réel depuis anime-sama.fr
+const data = await episodes.json();
+console.log(data.totalEpisodes); // Nombre réel depuis anime-sama.fr
 ```
 
 ### Intégration Frontend
 ```javascript
+// Configuration centralisée
+const config = {
+  apiUrl: 'https://api-anime-sama.onrender.com' // Utiliser l'API de production
+};
+
 // Plus besoin de gérer des cas spéciaux par anime
 function loadAnimeEpisodes(animeId, season) {
   // Le système universel gère tout automatiquement
-  return fetch(`/api/seasons?animeId=${animeId}&season=${season}&language=vostfr`)
+  return fetch(`${config.apiUrl}/api/seasons?animeId=${animeId}&season=${season}&language=vostfr`)
     .then(response => response.json())
     .then(data => {
       // data.totalEpisodes contient toujours le nombre réel
