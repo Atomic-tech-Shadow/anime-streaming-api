@@ -8,6 +8,24 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
+// Gestionnaire global pour les promesses rejetées non gérées
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🚨 Promesse rejetée non gérée:', reason);
+  console.error('Promise:', promise);
+  // Ne pas faire crasher le serveur, juste logger l'erreur
+});
+
+// Gestionnaire pour les exceptions non capturées
+process.on('uncaughtException', (error) => {
+  console.error('🚨 Exception non capturée:', error);
+  // Log et continuer en production
+});
+
+// Gestionnaire pour les warnings (optionnel)
+process.on('warning', (warning) => {
+  console.warn('⚠️ Warning:', warning.name, warning.message);
+});
+
 // Fonction pour adapter les requêtes au format Vercel
 function adaptRequest(req: any): VercelRequest {
   const url = parse(req.url || '', true);
@@ -80,70 +98,115 @@ const server = createServer(async (req, res) => {
     const vercelReq = adaptRequest(req);
     const vercelRes = adaptResponse(res);
 
-    // Router pour les différentes endpoints
+    // Router pour les différentes endpoints avec gestion d'erreurs
     if (pathname === '/api/health') {
       const { default: handler } = await import('../api/health.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler health:', error);
+        throw error;
+      });
     } 
     else if (pathname === '/api/status') {
       const { default: handler } = await import('../api/status.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler status:', error);
+        throw error;
+      });
     }
     else if (pathname === '/api/search') {
       const { default: handler } = await import('../api/search.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler search:', error);
+        throw error;
+      });
     }
     else if (pathname.startsWith('/api/anime/')) {
       const id = pathname.split('/')[3];
       vercelReq.query = { ...vercelReq.query, id };
       const { default: handler } = await import('../api/anime/[id].js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler anime:', error);
+        throw error;
+      });
     }
     else if (pathname.startsWith('/api/episode/')) {
       const id = pathname.split('/')[3];
       vercelReq.query = { ...vercelReq.query, id };
       const { default: handler } = await import('../api/episode/[id].js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler episode:', error);
+        throw error;
+      });
     }
     else if (pathname === '/api/trending') {
       const { default: handler } = await import('../api/trending.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler trending:', error);
+        throw error;
+      });
     }
     else if (pathname === '/api/catalogue') {
       const { default: handler } = await import('../api/catalogue.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler catalogue:', error);
+        throw error;
+      });
     }
     else if (pathname === '/api/genres') {
       const { default: handler } = await import('../api/genres.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler genres:', error);
+        throw error;
+      });
     }
     else if (pathname === '/api/random') {
       const { default: handler } = await import('../api/random.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler random:', error);
+        throw error;
+      });
     }
     else if (pathname === '/api/advanced-search') {
       const { default: handler } = await import('../api/advanced-search.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler advanced-search:', error);
+        throw error;
+      });
     }
     else if (pathname === '/api/seasons') {
       const { default: handler } = await import('../api/seasons.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler seasons:', error);
+        throw error;
+      });
     }
     else if (pathname === '/api/content') {
       const { default: handler } = await import('../api/content.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler content:', error);
+        throw error;
+      });
     }
     else if (pathname === '/api/content-types') {
       const { default: handler } = await import('../api/content-types.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler content-types:', error);
+        throw error;
+      });
     }
     else if (pathname === '/docs') {
       const { default: handler } = await import('../api/docs.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler docs:', error);
+        throw error;
+      });
     }
     else if (pathname === '/' || pathname === '/api') {
       const { default: handler } = await import('../api/index.js');
-      await handler(vercelReq, vercelRes);
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler index:', error);
+        throw error;
+      });
     }
     else {
       res.statusCode = 404;

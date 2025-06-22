@@ -369,8 +369,13 @@ export class AnimeSamaNavigator {
             
             try {
               const episodesResponse = await this.axiosInstance.get(episodesJsUrl, {
-                headers: { 'Referer': workingUrl }
+                headers: { 'Referer': workingUrl },
+                timeout: 5000
               });
+              
+              if (!episodesResponse || !episodesResponse.data) {
+                throw new Error('Réponse episodes.js vide');
+              }
               
               const episodesData = episodesResponse.data;
               // For One Piece, calculate the correct episode index within the current season
@@ -526,7 +531,8 @@ export class AnimeSamaNavigator {
                 );
               }
             } catch (jsError) {
-              console.log('Impossible de récupérer episodes.js');
+              console.error('Erreur episodes.js:', jsError);
+              // Ne pas propager l'erreur, continuer avec les sources de démonstration
             }
           }
         }
