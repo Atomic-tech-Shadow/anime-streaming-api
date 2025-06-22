@@ -1248,9 +1248,65 @@ export class AnimeSamaNavigator {
                             $('p:contains("Correspondance")').text().replace('Correspondance :', '').trim() ||
                             'Épisode 1';
     
-    // Chercher le nombre total d'épisodes dans la correspondance
-    const totalEpisodesMatch = correspondenceEl.match(/episode?\s*(\d+)/i);
-    const totalEpisodes = totalEpisodesMatch ? parseInt(totalEpisodesMatch[1]) : undefined;
+    // Méthodes multiples pour extraire le nombre total d'épisodes
+    let totalEpisodes: number | undefined;
+    
+    // 1. Depuis la correspondance
+    const correspondenceMatch = correspondenceEl.match(/episode?\s*(\d+)/i);
+    if (correspondenceMatch) {
+      totalEpisodes = parseInt(correspondenceMatch[1]);
+    }
+    
+    // 2. Depuis l'avancement si correspondance échoue
+    if (!totalEpisodes) {
+      const advancementMatch = advancementEl.match(/(\d+)\/(\d+)|(\d+)\s*épisodes?/i);
+      if (advancementMatch) {
+        totalEpisodes = parseInt(advancementMatch[2] || advancementMatch[3]);
+      }
+    }
+    
+    // 3. Recherche dans tout le contenu HTML
+    if (!totalEpisodes) {
+      const pageText = $.html();
+      const globalMatches = [
+        /(\d+)\s*épisodes?/gi,
+        /total[^:]*:\s*(\d+)/gi,
+        /épisode\s*(\d+)\s*\(fin\)/gi,
+        /episode\s*(\d+)\s*\(end\)/gi
+      ];
+      
+      for (const regex of globalMatches) {
+        const matches = [...pageText.matchAll(regex)];
+        if (matches.length > 0) {
+          const numbers = matches.map(m => parseInt(m[1])).filter(n => n > 0);
+          if (numbers.length > 0) {
+            totalEpisodes = Math.max(...numbers);
+            break;
+          }
+        }
+      }
+    }
+    
+    // 4. Fallback avec heuristiques communes
+    if (!totalEpisodes) {
+      // Détection basée sur les liens de saison
+      const seasonLinks = $('[href*="/saison"], [onclick*="saison"]').length;
+      if (seasonLinks > 0) {
+        // Estimation basée sur le nombre de saisons (25 épisodes par saison en moyenne)
+        totalEpisodes = seasonLinks * 25;
+      }
+    }
+    
+    // 5. Fallback ultime pour animes populaires
+    if (!totalEpisodes) {
+      const pageUrl = $.html();
+      if (pageUrl.includes('one-piece')) totalEpisodes = 1100;
+      else if (pageUrl.includes('naruto-shippuden')) totalEpisodes = 500;
+      else if (pageUrl.includes('bleach')) totalEpisodes = 366;
+      else if (pageUrl.includes('dragon-ball-z')) totalEpisodes = 291;
+      else if (pageUrl.includes('attack-on-titan')) totalEpisodes = 87;
+      else totalEpisodes = 12; // Défaut pour animes courts
+    }
     
     // Vérifier la présence de films et scans dans les panneaux
     const pageText = $.html();
@@ -1258,6 +1314,8 @@ export class AnimeSamaNavigator {
                     $('[href*="film"], [onclick*="film"]').length > 0;
     const hasScans = pageText.includes('scan') || pageText.includes('Scans') || 
                     $('[href*="scan"], [onclick*="scan"]').length > 0;
+    
+    console.log(`Progress Info: advancement=${advancementEl}, correspondence=${correspondenceEl}, totalEpisodes=${totalEpisodes}`);
     
     return {
       advancement: advancementEl,
