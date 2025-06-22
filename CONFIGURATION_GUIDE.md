@@ -160,6 +160,24 @@ Détecte [] langues disponibles
 - Fallback automatique vers VOSTFR
 - Validation stricte des épisodes avant retour
 
+### Problème 4: Mauvais mapping d'épisodes (One Piece)
+
+**Symptôme:**
+```
+Episode 1087 (Egghead) joue du contenu de la Guerre au Sommet
+```
+
+**Solution:**
+- Correction des URLs pour One Piece saisons 11+ (Egghead arc)
+- Episode 1087+ maintenant mappé vers saison11/vostfr
+- Mapping précis par arc: East Blue → Egghead
+
+**Test de vérification:**
+```bash
+curl "https://api-anime-sama.onrender.com/api/episode/one-piece-episode-1087-vostfr"
+# Doit retourner des sources depuis saison11 (Egghead), pas saison6 (Guerre)
+```
+
 ### Problème 4: Timeouts et erreurs de réseau
 
 **Configuration recommandée:**

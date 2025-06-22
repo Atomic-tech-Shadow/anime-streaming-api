@@ -737,41 +737,84 @@ export class AnimeSamaNavigator {
     const lang = language.toLowerCase();
     const urls: string[] = [];
     
-    // Smart section detection based on episode number patterns
-    if (episodeNumber > 1000) {
-      // Very high episode numbers - likely saga-based structure
-      const sagaNum = Math.ceil((episodeNumber - 1000) / 100) + 10;
-      urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${sagaNum}/${lang}`);
+    // Specific mapping for One Piece episodes based on actual anime-sama.fr structure
+    if (animeId === 'one-piece') {
+      if (episodeNumber >= 1087) {
+        // Egghead Arc (1087+) - Saga 11
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison11/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga11/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/egghead/${lang}`);
+      } else if (episodeNumber >= 890) {
+        // Wano Country Arc (890-1086)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga10/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/wano/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/pays-des-wa/${lang}`);
+      } else if (episodeNumber >= 747) {
+        // Whole Cake Island Arc (747-889)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga9/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/tougato/${lang}`);
+      } else if (episodeNumber >= 575) {
+        // Dressrosa Arc (575-746)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga8/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/dressrosa/${lang}`);
+      } else if (episodeNumber >= 517) {
+        // Fish-Man Island Arc (517-574)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga7/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/poissons/${lang}`);
+      } else if (episodeNumber >= 385) {
+        // Marineford/War Arc (385-516)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga6/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/guerre/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison6/${lang}`);
+      } else if (episodeNumber >= 326) {
+        // Thriller Bark Arc (326-384)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga5/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/thriller/${lang}`);
+      } else if (episodeNumber >= 207) {
+        // Water Seven Arc (207-325)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga4/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/water7/${lang}`);
+      } else if (episodeNumber >= 136) {
+        // Sky Island Arc (136-206)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga3/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/celeste/${lang}`);
+      } else if (episodeNumber >= 62) {
+        // Alabasta Arc (62-135)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga2/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/alabasta/${lang}`);
+      } else {
+        // East Blue Arc (1-61)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga1/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/eastblue/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison1/${lang}`);
+      }
+    } else {
+      // Generic smart section detection for other anime
+      if (episodeNumber > 1000) {
+        const sagaNum = Math.ceil((episodeNumber - 1000) / 100) + 10;
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${sagaNum}/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${Math.ceil(episodeNumber / 200)}/${lang}`);
+      }
       
-      // Alternative patterns for high episodes
-      urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${Math.ceil(episodeNumber / 200)}/${lang}`);
-      urls.push(`${this.baseUrl}/catalogue/${animeId}/arc${sagaNum}/${lang}`);
+      if (episodeNumber > 500) {
+        const sagaNum = Math.ceil(episodeNumber / 100);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${sagaNum}/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${Math.ceil(episodeNumber / 100)}/${lang}`);
+      }
+      
+      if (episodeNumber > 100) {
+        const seasonNum = Math.ceil(episodeNumber / 50);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${seasonNum}/${lang}`);
+      }
+      
+      // Standard season patterns
+      for (let i = 1; i <= 5; i++) {
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${i}/${lang}`);
+      }
     }
     
-    if (episodeNumber > 500) {
-      // High episode numbers - try saga or season-based
-      const sagaNum = Math.ceil(episodeNumber / 100);
-      urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${sagaNum}/${lang}`);
-      urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${Math.ceil(episodeNumber / 100)}/${lang}`);
-      urls.push(`${this.baseUrl}/catalogue/${animeId}/arc${sagaNum}/${lang}`);
-    }
-    
-    if (episodeNumber > 100) {
-      // Medium episode numbers
-      const seasonNum = Math.ceil(episodeNumber / 50);
-      urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${seasonNum}/${lang}`);
-      urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${Math.ceil(episodeNumber / 100)}/${lang}`);
-    }
-    
-    // Standard season patterns (always try these)
-    for (let i = 1; i <= 5; i++) {
-      urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${i}/${lang}`);
-    }
-    
-    // Alternative naming conventions
+    // Alternative naming conventions (always try these as fallback)
     urls.push(
-      `${this.baseUrl}/catalogue/${animeId}/season1/${lang}`,
-      `${this.baseUrl}/catalogue/${animeId}/s1/${lang}`,
       `${this.baseUrl}/catalogue/${animeId}/${lang}`,
       `${this.baseUrl}/catalogue/${animeId}/episodes/${lang}`,
       `${this.baseUrl}/catalogue/${animeId}/vf-vostfr/${lang}`
