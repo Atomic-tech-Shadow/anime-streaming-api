@@ -1,5 +1,7 @@
 import { createServer } from 'http';
 import { parse } from 'url';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import dotenv from 'dotenv';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -163,6 +165,37 @@ const server = createServer(async (req, res) => {
       const { default: handler } = await import('../api/episode/[id].js');
       await handler(vercelReq, vercelRes);
     }
+    else if (pathname === '/demo' || pathname === '/anime-sama-demo') {
+      // Serve the comprehensive anime-sama demo page
+      const { default: handler } = await import('../api/anime-sama-demo.js');
+      await handler(vercelReq, vercelRes);
+    }
+    else if (pathname === '/demo-simple') {
+      // Serve the simple demo page
+      try {
+        const htmlContent = readFileSync(join(process.cwd(), 'client', 'index.html'), 'utf-8');
+        res.setHeader('Content-Type', 'text/html');
+        res.statusCode = 200;
+        res.end(htmlContent);
+      } catch (error) {
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'text/html');
+        res.end('<h1>Demo page not found</h1><p>The demo page could not be loaded.</p>');
+      }
+    }
+    else if (pathname.startsWith('/client/src/styles/')) {
+      // Serve CSS files
+      try {
+        const filePath = pathname.replace('/client/src/styles/', '');
+        const cssContent = readFileSync(join(process.cwd(), 'client', 'src', 'styles', filePath), 'utf-8');
+        res.setHeader('Content-Type', 'text/css');
+        res.statusCode = 200;
+        res.end(cssContent);
+      } catch (error) {
+        res.statusCode = 404;
+        res.end('CSS file not found');
+      }
+    }
     else if (pathname === '/' || pathname === '/api') {
       const { default: handler } = await import('../api/index.js');
       await handler(vercelReq, vercelRes);
@@ -188,6 +221,7 @@ server.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
   console.log(`🚀 API Anime Sama démarrée sur http://0.0.0.0:${PORT}`);
   console.log(`📚 Documentation: http://0.0.0.0:${PORT}/docs`);
   console.log(`🔍 Test: http://0.0.0.0:${PORT}/api/health`);
+  console.log(`🎬 Démo Anime-Sama Corrigée: http://0.0.0.0:${PORT}/demo`);
 });
 
 // Gestion propre de l'arrêt

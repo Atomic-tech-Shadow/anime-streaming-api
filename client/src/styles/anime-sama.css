@@ -1,0 +1,669 @@
+/* =====================================================
+   STYLES ANIME-SAMA CORRIGÉS ET RESPONSIVES
+   Fixes: responsive design, loading states, accessibilité
+   ===================================================== */
+
+/* Variables CSS pour cohérence */
+:root {
+  --primary-color: #2563eb;
+  --primary-hover: #1d4ed8;
+  --secondary-color: #64748b;
+  --accent-color: #f59e0b;
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --warning-color: #f59e0b;
+  
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  
+  --border-color: #e2e8f0;
+  --border-radius: 8px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+  }
+}
+
+/* Base reset et typography */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+}
+
+/* =====================================================
+   COMPOSANT PRINCIPAL ANIME-SAMA
+   ===================================================== */
+
+.anime-sama-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-md);
+  min-height: 100vh;
+}
+
+/* =====================================================
+   EN-TÊTE ANIME (RESPONSIVE CORRIGÉ)
+   ===================================================== */
+
+.anime-header {
+  display: flex;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.anime-poster {
+  flex-shrink: 0;
+}
+
+.anime-poster img {
+  width: 200px;
+  height: 280px;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.3s ease;
+}
+
+.anime-poster img:hover {
+  transform: scale(1.02);
+}
+
+.anime-info {
+  flex: 1;
+  min-width: 0; /* Permet au contenu de se contracter */
+}
+
+.anime-info h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.anime-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.7;
+}
+
+.anime-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.anime-meta span {
+  background: var(--bg-tertiary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.anime-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.genre-tag {
+  background: var(--primary-color);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Responsive en-tête */
+@media (max-width: 768px) {
+  .anime-header {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+  }
+  
+  .anime-poster img {
+    width: 150px;
+    height: 210px;
+    margin: 0 auto;
+  }
+  
+  .anime-info h1 {
+    font-size: 1.5rem;
+  }
+  
+  .anime-meta {
+    justify-content: center;
+  }
+}
+
+/* =====================================================
+   CONTRÔLES DE NAVIGATION
+   ===================================================== */
+
+.anime-controls {
+  display: flex;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  align-items: end;
+}
+
+.season-selector,
+.language-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.season-selector label,
+.language-selector label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.season-selector select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.season-selector select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.language-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.language-buttons button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.language-buttons button:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.language-buttons button.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.language-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive contrôles */
+@media (max-width: 640px) {
+  .anime-controls {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+  
+  .language-buttons {
+    justify-content: stretch;
+  }
+  
+  .language-buttons button {
+    flex: 1;
+  }
+}
+
+/* =====================================================
+   SECTION ÉPISODES
+   ===================================================== */
+
+.episodes-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.episodes-section h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-primary);
+}
+
+.loading-indicator {
+  color: var(--warning-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.episodes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.episode-card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.episode-card:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.episode-card.selected {
+  border-color: var(--primary-color);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.episode-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.episode-number {
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-xs);
+}
+
+.episode-title {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.unavailable {
+  color: var(--error-color);
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: var(--spacing-xs);
+}
+
+.no-episodes {
+  text-align: center;
+  color: var(--text-muted);
+  padding: var(--spacing-2xl);
+  font-style: italic;
+}
+
+/* Responsive épisodes */
+@media (max-width: 640px) {
+  .episodes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =====================================================
+   NAVIGATION ÉPISODES
+   ===================================================== */
+
+.episode-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-xl);
+  gap: var(--spacing-md);
+}
+
+.episode-navigation button {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.episode-navigation button:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.episode-navigation button:disabled {
+  background: var(--secondary-color);
+  cursor: not-allowed;
+}
+
+.current-episode {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  flex: 1;
+}
+
+/* Responsive navigation */
+@media (max-width: 640px) {
+  .episode-navigation {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .current-episode {
+    order: -1;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .episode-navigation button {
+    width: 100%;
+  }
+}
+
+/* =====================================================
+   LECTEUR VIDÉO
+   ===================================================== */
+
+.video-player-section {
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.video-player-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-primary);
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  background: black;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.video-container iframe {
+  width: 100%;
+  height: 500px;
+  border: none;
+}
+
+.alternative-sources {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.alternative-sources h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.sources-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.source-link {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-primary);
+  color: var(--primary-color);
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.source-link:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.no-sources {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--text-muted);
+}
+
+.no-sources button {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.no-sources button:hover {
+  background: var(--primary-hover);
+}
+
+/* Responsive vidéo */
+@media (max-width: 768px) {
+  .video-container iframe {
+    height: 250px;
+  }
+  
+  .video-player-section {
+    padding: var(--spacing-lg);
+  }
+}
+
+/* =====================================================
+   ÉTATS DE CHARGEMENT ET D'ERREUR
+   ===================================================== */
+
+.anime-loading,
+.anime-error,
+.anime-not-found,
+.loading-video {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  text-align: center;
+  min-height: 300px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border-color);
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--spacing-lg);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.anime-error {
+  color: var(--error-color);
+}
+
+.anime-error h3 {
+  margin-bottom: var(--spacing-md);
+}
+
+.retry-button {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--error-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.2s ease;
+}
+
+.retry-button:hover {
+  opacity: 0.9;
+}
+
+.anime-not-found {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* =====================================================
+   ANIMATIONS ET TRANSITIONS
+   ===================================================== */
+
+.anime-sama-page * {
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Animations d'entrée */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.anime-header,
+.episodes-section,
+.video-player-section {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* =====================================================
+   ACCESSIBILITÉ
+   ===================================================== */
+
+/* Focus visible pour navigation clavier */
+button:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Respect des préférences de mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .loading-spinner {
+    animation: none;
+  }
+}
+
+/* =====================================================
+   BREAKPOINTS SUPPLÉMENTAIRES
+   ===================================================== */
+
+@media (max-width: 480px) {
+  .anime-sama-page {
+    padding: var(--spacing-sm);
+  }
+  
+  .anime-header {
+    padding: var(--spacing-md);
+  }
+  
+  .anime-info h1 {
+    font-size: 1.25rem;
+  }
+  
+  .video-container iframe {
+    height: 200px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .anime-sama-page {
+    max-width: 1400px;
+  }
+  
+  .episodes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}

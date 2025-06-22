@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime-Sama - Page Corrigée</title>
+    <link rel="stylesheet" href="src/styles/anime-sama.css">
+    <style>
+        /* Styles de base pour la démo */
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .demo-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .demo-header h1 {
+            color: #2563eb;
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .demo-header p {
+            color: #64748b;
+            margin: 0.5rem 0 0 0;
+            font-size: 1rem;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bug-fixes-summary {
+            background: #f0f9ff;
+            border-left: 4px solid #2563eb;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .bug-fixes-summary h2 {
+            color: #1e40af;
+            margin: 0 0 1rem 0;
+            font-size: 1.5rem;
+        }
+        
+        .bug-fixes-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .bug-fixes-list li {
+            padding: 0.5rem 0;
+            color: #374151;
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .bug-fixes-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .api-demo {
+            background: #fefce8;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .api-demo h3 {
+            color: #92400e;
+            margin: 0 0 1rem 0;
+        }
+        
+        .api-endpoint {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        
+        .test-button {
+            background: #2563eb;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        
+        .test-button:hover {
+            background: #1d4ed8;
+        }
+        
+        .test-results {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .test-results pre {
+            margin: 0;
+            white-space: pre-wrap;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        
+        .loading {
+            color: #f59e0b;
+        }
+        
+        .success {
+            color: #10b981;
+        }
+        
+        .error {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-header">
+        <h1>Page Anime-Sama - Bugs Corrigés</h1>
+        <p>Démonstration des corrections apportées selon la documentation des erreurs</p>
+    </div>
+
+    <div class="demo-container">
+        <div class="bug-fixes-summary">
+            <h2>🔧 Corrections Appliquées</h2>
+            <ul class="bug-fixes-list">
+                <li><strong>Race conditions éliminées</strong> - Plus de synchronisation entre selectedEpisode et loadEpisodeSources</li>
+                <li><strong>Changement de langue optimisé</strong> - Préservation de l'épisode actuel lors du switch VF/VOSTFR</li>
+                <li><strong>Cache local implémenté</strong> - Réduction des appels API redondants avec TTL de 5 minutes</li>
+                <li><strong>Retry automatique</strong> - Gestion robuste des timeouts et erreurs serveur</li>
+                <li><strong>Interface responsive</strong> - Adaptation mobile et tablette complète</li>
+                <li><strong>Gestion d'erreurs améliorée</strong> - Messages utilisateur spécifiques par type d'erreur</li>
+                <li><strong>Annulation de requêtes</strong> - AbortController pour éviter les appels API obsolètes</li>
+                <li><strong>États de chargement cohérents</strong> - Loading states précis pour chaque action</li>
+            </ul>
+        </div>
+
+        <div class="api-demo">
+            <h3>🔗 Test de l'API Anime-Sama</h3>
+            <p>API de production utilisée:</p>
+            <div class="api-endpoint">https://api-anime-sama.onrender.com</div>
+            
+            <button class="test-button" onclick="testHealthEndpoint()">Test Health</button>
+            <button class="test-button" onclick="testSearchEndpoint()">Test Search</button>
+            <button class="test-button" onclick="testAnimeDetails()">Test One Piece</button>
+            <button class="test-button" onclick="testSeasonEpisodes()">Test Saison</button>
+            
+            <div id="test-results" class="test-results" style="display: none;">
+                <pre id="results-content"></pre>
+            </div>
+        </div>
+
+        <div id="anime-demo">
+            <h3>📺 Composant Anime-Sama</h3>
+            <p>Le composant React corrigé sera intégré ici une fois React configuré.</p>
+            <p>En attendant, vous pouvez tester les endpoints API ci-dessus pour vérifier la connectivité.</p>
+            
+            <div style="background: #f3f4f6; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
+                <h4>Fonctionnalités principales du composant corrigé:</h4>
+                <ul style="margin: 1rem 0;">
+                    <li>Synchronisation parfaite entre sélection d'épisode et chargement des sources</li>
+                    <li>Changement de langue sans perte d'épisode actuel</li>
+                    <li>Cache intelligent pour réduire les appels API</li>
+                    <li>Interface entièrement responsive</li>
+                    <li>Gestion d'erreurs robuste avec retry automatique</li>
+                    <li>Navigation fluide entre épisodes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://api-anime-sama.onrender.com';
+        
+        function showResults(content, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const resultsContent = document.getElementById('results-content');
+            
+            resultsDiv.style.display = 'block';
+            resultsContent.className = type;
+            resultsContent.textContent = content;
+        }
+        
+        async function testHealthEndpoint() {
+            showResults('⏳ Test de l\'endpoint health...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                const data = await response.json();
+                
+                showResults(
+                    `✅ Health Check Réussi\n\n` +
+                    `Status: ${data.status}\n` +
+                    `Timestamp: ${data.timestamp}\n` +
+                    `Environment: ${data.environment}\n` +
+                    `Version: ${data.version}`,
+                    'success'
+                );
+            } catch (error) {
+                showResults(
+                    `❌ Erreur Health Check\n\n` +
+                    `Message: ${error.message}\n` +
+                    `Vérifiez que l'API est déployée et accessible.`,
+                    'error'
+                );
+            }
+        }
+        
+        async function testSearchEndpoint() {
+            showResults('⏳ Test de recherche "One Piece"...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/search?q=one piece`);
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    const anime = data.data[0];
+                    showResults(
+                        `✅ Recherche Réussie\n\n` +
+                        `Anime trouvé: ${anime.title}\n` +
+                        `ID: ${anime.id}\n` +
+                        `Description: ${anime.description.substring(0, 100)}...\n` +
+                        `Genres: ${anime.genres.join(', ')}\n` +
+                        `Année: ${anime.year}`,
+                        'success'
+                    );
+                } else {
+                    showResults('❌ Aucun résultat trouvé pour "One Piece"', 'error');
+                }
+            } catch (error) {
+                showResults(
+                    `❌ Erreur Recherche\n\n` +
+                    `Message: ${error.message}`,
+                    'error'
+                );
+            }
+        }
+        
+        async function testAnimeDetails() {
+            showResults('⏳ Test détails One Piece...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/anime/one-piece`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const anime = data.data;
+                    showResults(
+                        `✅ Détails Anime Récupérés\n\n` +
+                        `Titre: ${anime.title}\n` +
+                        `Status: ${anime.status}\n` +
+                        `Nombre de saisons: ${anime.seasons.length}\n` +
+                        `Genres: ${anime.genres.join(', ')}\n` +
+                        `Progression: ${anime.progressInfo?.advancement || 'N/A'}\n` +
+                        `Total épisodes: ${anime.progressInfo?.totalEpisodes || 'N/A'}`,
+                        'success'
+                    );
+                } else {
+                    showResults('❌ Impossible de récupérer les détails de One Piece', 'error');
+                }
+            } catch (error) {
+                showResults(
+                    `❌ Erreur Détails Anime\n\n` +
+                    `Message: ${error.message}`,
+                    'error'
+                );
+            }
+        }
+        
+        async function testSeasonEpisodes() {
+            showResults('⏳ Test épisodes saison One Piece...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/seasons?animeId=one-piece&season=21&language=vostfr`);
+                const data = await response.json();
+                
+                if (data.success && data.data?.episodes) {
+                    const episodes = data.data.episodes;
+                    showResults(
+                        `✅ Épisodes de Saison Récupérés\n\n` +
+                        `Saison: ${data.data.seasonInfo.name}\n` +
+                        `Nombre d'épisodes: ${episodes.length}\n` +
+                        `Premier épisode: ${episodes[0].episodeNumber} - ${episodes[0].title}\n` +
+                        `Dernier épisode: ${episodes[episodes.length-1].episodeNumber} - ${episodes[episodes.length-1].title}\n` +
+                        `Langue: ${episodes[0].language}`,
+                        'success'
+                    );
+                } else {
+                    showResults('❌ Impossible de récupérer les épisodes de la saison', 'error');
+                }
+            } catch (error) {
+                showResults(
+                    `❌ Erreur Épisodes Saison\n\n` +
+                    `Message: ${error.message}`,
+                    'error'
+                );
+            }
+        }
+    </script>
+</body>
+</html>
