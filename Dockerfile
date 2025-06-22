@@ -1,23 +1,24 @@
-# Dockerfile simple pour éviter les erreurs de déploiement automatique
+# Anime-Sama API Docker Configuration
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY package*.json ./
+# Copy package files
+COPY package.json ./
+COPY package-lock.json* ./
 
-# Installer les dépendances
-RUN npm ci --omit=dev
+# Install all dependencies (including dev for tsx)
+RUN npm install
 
-# Copier le code source
+# Copy source code
 COPY . .
 
-# Exposer le port
+# Expose port
 EXPOSE 5000
 
-# Variables d'environnement
-ENV NODE_ENV=production
+# Environment variables
+ENV NODE_ENV=development
 ENV PORT=5000
 
-# Démarrer l'application
-CMD ["npm", "start"]
+# Start application with tsx
+CMD ["npx", "tsx", "server/index.ts"]
