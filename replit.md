@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a Node.js REST API built with Express and TypeScript that scrapes anime-sama.fr to provide anime search, details, and streaming functionality. The application is designed for deployment on Vercel with serverless functions and includes intelligent caching, rate limiting, and passive authentication to interact with the anime-sama.fr website.
+This is a Node.js REST API built with Express and TypeScript that scrapes anime-sama.fr to provide anime search, details, and streaming functionality. The application features a **Universal System** that automatically works with any anime available on anime-sama.fr without requiring specific configurations per anime. The system extracts authentic data directly from the source, ensuring accurate episode counts and real streaming sources.
 
 ## System Architecture
 
@@ -14,7 +14,10 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - **Request Handling**: Each endpoint is a separate serverless function
 
 ### Core Technologies
+- **Universal System**: Automatic detection of anime structure without hardcoded configurations
+- **Real Data Extraction**: Direct parsing of episodes.js files from anime-sama.fr for authentic episode counts
 - **Web Scraping**: Cheerio for HTML parsing, Axios for HTTP requests
+- **Intelligent Fallback**: Multiple URL pattern testing to find correct anime structure
 - **Authentication**: Passive authentication system that mimics browser behavior
 - **Validation**: Zod for request/response validation
 - **Session Management**: Cookie-based sessions with rotation

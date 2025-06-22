@@ -8,9 +8,12 @@ API REST Node.js qui scrape anime-sama.fr pour fournir des fonctionnalités de r
 
 ## Fonctionnalités Principales
 
-- **Recherche d'anime** - Recherche par titre
-- **Détails d'anime** - Informations complètes avec épisodes et saisons
-- **Liens de streaming** - Sources multiples (VF/VOSTFR) avec serveurs variés
+- **Système Universel** - Fonctionne avec tous les animes disponibles sur anime-sama.fr sans configuration spécifique
+- **Données Authentiques** - Extraction automatique des vraies données depuis anime-sama.fr (épisodes, films, saisons)
+- **Recherche d'anime** - Recherche par titre avec résultats précis
+- **Détails d'anime** - Informations complètes avec structure réelle détectée automatiquement
+- **Liens de streaming** - Sources multiples (VF/VOSTFR) extraites directement des serveurs
+- **Détection Intelligente** - Analyse automatique des fichiers episodes.js pour compter les vrais épisodes
 - **Anime tendances** - Liste des anime populaires
 - **Catalogue complet** - Navigation avec filtres
 - **Recherche avancée** - Filtres multiples
@@ -64,6 +67,8 @@ GET /api/episode/{episodeId}
 GET /api/seasons?animeId={id}&season={number}&language={vf|vostfr}
 ```
 
+**Nouveau**: Détection automatique du nombre réel d'épisodes depuis anime-sama.fr
+
 ### Anime tendances
 ```http
 GET /api/trending
@@ -102,10 +107,18 @@ GET /docs
 
 ## Architecture
 
+### Système Universel
+- **Détection Automatique**: Analyse dynamique de la structure de chaque anime
+- **Pas de Configuration**: Aucune configuration spécifique par anime requise
+- **Données Réelles**: Extraction directe depuis les fichiers episodes.js d'anime-sama.fr
+- **Fallback Intelligent**: Tests multiples d'URLs pour trouver les bonnes sources
+
+### Technologies
 - **Framework**: Express.js + TypeScript
 - **Scraping**: Cheerio + Axios avec rotation User-Agent
 - **Cache**: Système en mémoire avec TTL
-- **Source**: Scraping temps réel anime-sama.fr
+- **Source**: Scraping temps réel anime-sama.fr avec extraction authentique
+- **Validation**: Vérification des données pour éviter les valeurs incorrectes
 
 ## API de Production
 
@@ -119,6 +132,32 @@ curl "https://api-anime-sama.onrender.com/api/search?q=one%20piece"
 ## Licence
 
 MIT License
+
+## Exemples d'Utilisation
+
+### Recherche d'anime
+```bash
+curl "http://localhost:5000/api/search?query=jujutsu+kaisen"
+```
+
+### Obtenir les épisodes avec données réelles
+```bash
+curl "http://localhost:5000/api/seasons?animeId=chainsaw-man&season=1&language=vostfr"
+# Retourne 12 épisodes réels extraits depuis anime-sama.fr
+```
+
+### Streaming d'un épisode
+```bash
+curl "http://localhost:5000/api/episode/demon-slayer-episode-1-vostfr"
+# Sources multiples extraites automatiquement
+```
+
+## Avantages du Système Universel
+
+- **Aucune Maintenance**: Pas besoin de configurer chaque anime individuellement
+- **Données Précises**: Nombre d'épisodes exact extrait du site source
+- **Évolutif**: Fonctionne automatiquement avec les nouveaux animes ajoutés sur anime-sama.fr
+- **Fiable**: Fallback intelligent si une URL ne fonctionne pas
 
 ## Avertissement
 
