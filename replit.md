@@ -141,6 +141,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - June 22, 2025. Migration from Replit Agent to standard Replit environment completed - all dependencies installed, server running on port 5000, API configured to use production deployment at https://api-anime-sama.onrender.com exclusively
 - June 22, 2025. Implemented complete anime-sama page corrections - fixed all critical bugs including race conditions, language switching, cache implementation, retry mechanisms, responsive design, and error handling. Created comprehensive demo at /demo endpoint with full documentation of fixes applied.
 - June 22, 2025. Analyzed complete anime-sama documentation and identified 8 critical bugs: incorrect API endpoints, race conditions in language switching, missing cache system, insufficient error handling, non-responsive interface, unoptimized search, and unprotected state management. Created comprehensive corrected documentation (DOCUMENTATION_ANIME_SAMA_CORRIGEE.md) with all fixes implemented and production-ready code examples.
+- June 22, 2025. Fixed One Piece Saga 11 episode correspondence bug - episodes 1087+ now use direct array indexing instead of incorrect modulo calculation. Episode 1087 now correctly maps to index 0, episode 1090 to index 3, ensuring selected episodes match exactly what plays in the video player.
 
 ## User Preferences
 

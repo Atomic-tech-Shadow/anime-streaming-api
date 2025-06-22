@@ -393,8 +393,25 @@ export class AnimeSamaNavigator {
                 console.log(`📊 Structure détectée: ${detectedArraySize} épisodes par saison`);
               }
               
-              // Calculate the best episode index based on detected structure
-              if (detectedArraySize > 0 && epNum > detectedArraySize) {
+              // Calculate the best episode index with One Piece specific correction
+              if (animeId === 'one-piece' && epNum >= 1087) {
+                // One Piece Saga 11 (Egghead) specific correction
+                // Episodes 1087+ should map directly to array indices starting from 0
+                episodeIndex = epNum - 1087; // Start from index 0 for episode 1087
+                console.log(`🎯 One Piece Saga 11: épisode ${episodeNumber} -> index direct: ${episodeIndex}`);
+              } else if (animeId === 'one-piece' && epNum >= 890) {
+                // One Piece Saga 10 (Pays des Wa)
+                episodeIndex = epNum - 890;
+                console.log(`🎯 One Piece Saga 10: épisode ${episodeNumber} -> index saga: ${episodeIndex}`);
+              } else if (animeId === 'one-piece' && epNum >= 747) {
+                // One Piece Saga 9 (Ile Tougato)
+                episodeIndex = epNum - 747;
+                console.log(`🎯 One Piece Saga 9: épisode ${episodeNumber} -> index saga: ${episodeIndex}`);
+              } else if (animeId === 'one-piece' && epNum >= 575) {
+                // One Piece Saga 8 (Dressrosa)
+                episodeIndex = epNum - 575;
+                console.log(`🎯 One Piece Saga 8: épisode ${episodeNumber} -> index saga: ${episodeIndex}`);
+              } else if (detectedArraySize > 0 && epNum > detectedArraySize) {
                 // Multi-season anime: calculate relative position
                 episodeIndex = (epNum - 1) % detectedArraySize;
                 console.log(`🎯 ${animeId} épisode ${episodeNumber} -> multi-saisons (${detectedArraySize} éps/saison), index relatif: ${episodeIndex}`);
