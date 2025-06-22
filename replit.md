@@ -122,12 +122,12 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 
 - June 15, 2025. Initial setup
 - June 15, 2025. Configuration complète de déploiement Vercel optimisé avec headers de sécurité, régions multiples, CI/CD et monitoring automatique
-- June 16, 2025. Migration complète vers Replit avec configuration de déploiement Render (render.yaml, Dockerfile, scripts de build)
+- June 16, 2025. Migration complète vers Replit avec configuration de déploiement Render
 - June 18, 2025. Migration successful from Replit Agent to standard Replit environment - all dependencies installed, server running on port 5000, API endpoints functional
 - June 18, 2025. Fixed streaming source extraction bugs - improved episode ID parsing, added fallback mechanisms for anime-sama.fr connectivity issues
 - June 19, 2025. Added /embed/ route support for direct episode URLs, enhanced URL parsing for better streaming source extraction
 - June 19, 2025. Fixed TypeScript compilation errors for production builds by updating NavigatorEpisodeResponse interface
-- June 19, 2025. Updated Docker configuration to use modern npm flags (--omit=dev instead of deprecated --production)
+- June 19, 2025. Updated build configuration to use modern npm flags (--omit=dev instead of deprecated --production)
 - June 19, 2025. Fixed season episode numbering bug - seasons now return correct episode numbers (e.g., One Piece S10 starts at episode 890)
 - June 20, 2025. Added progressInfo extraction to show real anime progress data (total episodes, films, scans availability) instead of placeholder "Episode 1"
 - June 20, 2025. Created comprehensive final documentation (API_DOCUMENTATION_FINALE.md) with all improvements and authentic data examples
