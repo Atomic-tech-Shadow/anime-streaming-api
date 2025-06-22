@@ -138,6 +138,15 @@ const server = createServer(async (req, res) => {
         throw error;
       });
     }
+    else if (pathname.startsWith('/api/embed/')) {
+      const episodeId = pathname.split('/')[3];
+      vercelReq.query = { ...vercelReq.query, episodeId };
+      const { default: handler } = await import('../api/embed/[episodeId].js');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler embed:', error);
+        throw error;
+      });
+    }
     else if (pathname === '/api/trending') {
       const { default: handler } = await import('../api/trending.js');
       await handler(vercelReq, vercelRes).catch(error => {
@@ -201,6 +210,23 @@ const server = createServer(async (req, res) => {
         throw error;
       });
     }
+    else if (pathname === '/demo') {
+      // Servir la page HTML démo
+      const fs = await import('fs');
+      const path = await import('path');
+      try {
+        const htmlPath = path.join(process.cwd(), 'public', 'anime-sama.html');
+        const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.statusCode = 200;
+        res.end(htmlContent);
+      } catch (error) {
+        console.error('Erreur lecture fichier demo:', error);
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'Demo page not found' }));
+      }
+    }
     else if (pathname === '/' || pathname === '/api') {
       const { default: handler } = await import('../api/index.js');
       await handler(vercelReq, vercelRes).catch(error => {
@@ -228,6 +254,7 @@ const server = createServer(async (req, res) => {
 server.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
   console.log(`🚀 API Anime Sama démarrée sur http://0.0.0.0:${PORT}`);
   console.log(`📚 Documentation: http://0.0.0.0:${PORT}/docs`);
+  console.log(`🎬 Demo: http://0.0.0.0:${PORT}/demo`);
   console.log(`🔍 Test: http://0.0.0.0:${PORT}/api/health`);
 });
 
