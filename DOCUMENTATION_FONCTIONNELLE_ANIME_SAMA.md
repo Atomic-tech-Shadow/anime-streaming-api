@@ -2,7 +2,17 @@
 
 ## 🎯 Vue d'ensemble fonctionnelle
 
-La page anime-sama est une interface en 3 vues (recherche, détails, lecteur) qui reproduit fidèlement anime-sama.fr. Cette documentation détaille l'implémentation complète avec toutes les corrections appliquées pour garantir un fonctionnement parfait.
+La page anime-sama reproduit exactement le flow d'anime-sama.fr :
+
+**Flow utilisateur simple :**
+1. **Page d'accueil** : Animes populaires + barre de recherche
+2. **Clic sur anime** → Page détails avec saisons
+3. **Clic sur saison** → Sélection d'épisode et lecture directe
+
+**Recherche alternative :**
+1. **Taper dans la barre** → Résultats de recherche
+2. **Clic sur résultat** → Page détails
+3. **Clic sur saison** → Lecture d'épisode
 
 **API utilisée exclusivement** : `https://api-anime-sama.onrender.com`
 
@@ -367,12 +377,11 @@ export const useAnimeSama = () => {
     }
   };
   
-  // FONCTION 4: Sélection d'une saison
+  // FONCTION 4: Sélection d'une saison (comme anime-sama.fr)
   const selectSeason = async (season: Season) => {
     if (loading || !selectedAnime) return;
     
     setSelectedSeason(season);
-    setCurrentView('player');
     
     // Détecter les langues disponibles et charger la première disponible
     const availableLanguages = season.languages as LanguageType[];
@@ -382,6 +391,9 @@ export const useAnimeSama = () => {
     
     setSelectedLanguage(preferredLanguage);
     await loadSeasonEpisodes(selectedAnime.id, season.number, preferredLanguage.toLowerCase() as 'vf' | 'vostfr');
+    
+    // Transition directe vers le lecteur (comme sur anime-sama.fr)
+    setCurrentView('player');
   };
   
   // FONCTION 5: Chargement des épisodes d'une saison
@@ -767,7 +779,8 @@ import { useAnimeSama } from '../hooks/useAnimeSama';
 export const AnimeDetailsView: React.FC = () => {
   const {
     selectedAnime,
-    selectSeason
+    selectSeason,
+    loading
   } = useAnimeSama();
   
   if (!selectedAnime) return null;
@@ -837,17 +850,17 @@ export const AnimeDetailsView: React.FC = () => {
       {/* Boutons d'action */}
       <div className="flex gap-4">
         <button className="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
-          ⭐ Favoris
+          Favoris
         </button>
         <button className="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
-          📝 Watchlist
+          Watchlist
         </button>
         <button className="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
-          ✅ Vu
+          Vu
         </button>
       </div>
       
-      {/* Section ANIME - Saisons */}
+      {/* Section ANIME - Saisons (Clic direct vers lecteur comme anime-sama.fr) */}
       <div>
         <h2 className="text-2xl font-bold mb-4">ANIME</h2>
         <div className="grid grid-cols-2 gap-3">
@@ -855,11 +868,15 @@ export const AnimeDetailsView: React.FC = () => {
             <button
               key={season.number}
               onClick={() => selectSeason(season)}
-              className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-lg transition-colors text-left"
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white p-4 rounded-lg transition-colors text-left"
             >
               <div className="font-semibold">{season.name}</div>
               <div className="text-sm opacity-90">
                 {season.episodeCount} épisodes • {season.languages.join(', ')}
+              </div>
+              <div className="text-xs opacity-75 mt-1">
+                Cliquez pour regarder
               </div>
             </button>
           ))}
@@ -870,7 +887,7 @@ export const AnimeDetailsView: React.FC = () => {
 };
 ```
 
-## 🎬 Composant PlayerView.tsx
+## 🎬 Composant PlayerView.tsx (Flow anime-sama.fr simplifié)
 
 ```typescript
 import React from 'react';
@@ -900,30 +917,64 @@ export const PlayerView: React.FC = () => {
   
   return (
     <div className="space-y-6">
-      {/* Sélecteurs de langue */}
-      <div className="flex gap-2">
-        {availableLanguages.map((language) => (
-          <button
-            key={language}
-            onClick={() => changeLanguage(language)}
-            disabled={languageChangeInProgress}
-            className={`px-4 py-2 rounded-lg border-2 transition-colors ${
-              selectedLanguage === language
-                ? language === 'VF'
-                  ? 'bg-blue-600 border-white text-white'
-                  : 'bg-red-600 border-white text-white'
-                : language === 'VF'
-                  ? 'bg-blue-600/20 border-blue-600 text-blue-400 hover:bg-blue-600/40'
-                  : 'bg-red-600/20 border-red-600 text-red-400 hover:bg-red-600/40'
-            } ${languageChangeInProgress ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {language === 'VF' ? '🇫🇷' : '🇯🇵'} {language}
-          </button>
-        ))}
+      {/* Titre de l'anime et épisode actuel */}
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-2">{selectedAnime.title}</h1>
+        <p className="text-blue-400">
+          {selectedSeason.name} - Épisode {selectedEpisode.episodeNumber}
+        </p>
       </div>
       
-      {/* Contrôles de lecture */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Lecteur vidéo principal (comme anime-sama.fr) */}
+      <div className="relative rounded-lg overflow-hidden bg-black">
+        {currentVideoSource ? (
+          <iframe
+            src={currentVideoSource.url}
+            className="w-full h-64 md:h-80 lg:h-96"
+            allowFullScreen
+            frameBorder="0"
+            title={`${selectedAnime.title} - Épisode ${selectedEpisode.episodeNumber}`}
+            onError={() => console.error('Erreur lecteur vidéo')}
+          />
+        ) : (
+          <div className="h-64 md:h-80 lg:h-96 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-gray-400 mb-4">Chargement de la vidéo...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Contrôles sous le lecteur (comme anime-sama.fr) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Sélecteurs de langue avec drapeaux */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Langue</label>
+          <div className="flex gap-2">
+            {availableLanguages.map((language) => (
+              <button
+                key={language}
+                onClick={() => changeLanguage(language)}
+                disabled={languageChangeInProgress}
+                className={`flex-1 px-3 py-2 rounded-lg border-2 transition-colors ${
+                  selectedLanguage === language
+                    ? language === 'VF'
+                      ? 'bg-blue-600 border-white text-white'
+                      : 'bg-red-600 border-white text-white'
+                    : language === 'VF'
+                      ? 'bg-blue-600/20 border-blue-600 text-blue-400 hover:bg-blue-600/40'
+                      : 'bg-red-600/20 border-red-600 text-red-400 hover:bg-red-600/40'
+                } ${languageChangeInProgress ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <span className="text-xs">{language === 'VF' ? '🇫🇷' : '🇯🇵'}</span>
+                <br />
+                <span className="font-semibold">{language}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        
         {/* Sélecteur d'épisodes */}
         <div>
           <label className="block text-sm font-medium mb-2">Épisode</label>
@@ -957,81 +1008,33 @@ export const PlayerView: React.FC = () => {
               <option key={index} value={index}>
                 {source.server} ({source.quality})
               </option>
-            )) || <option>Aucun serveur disponible</option>}
+            )) || <option>Chargement...</option>}
           </select>
         </div>
       </div>
       
-      {/* Lecteur vidéo */}
-      <div className="space-y-4">
-        <div className="relative rounded-lg overflow-hidden bg-black">
-          {currentVideoSource ? (
-            <iframe
-              src={currentVideoSource.url}
-              className="w-full h-64 md:h-80 lg:h-96"
-              allowFullScreen
-              frameBorder="0"
-              title={`${episodeDetails?.title} - ${currentVideoSource.server}`}
-              onError={() => console.error('Erreur lecteur vidéo')}
-            />
-          ) : (
-            <div className="h-64 md:h-80 lg:h-96 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-gray-400 mb-4">Aucune source vidéo disponible</p>
-                <p className="text-sm text-gray-500">
-                  Essayez de changer de serveur ou vérifiez votre connexion
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+      {/* Navigation épisodes (comme anime-sama.fr) */}
+      <div className="flex justify-between items-center bg-gray-900 rounded-lg p-4">
+        <button
+          onClick={() => navigateEpisode('prev')}
+          disabled={!hasPrevEpisode || languageChangeInProgress}
+          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+        >
+          ← Précédent
+        </button>
         
-        {/* Navigation épisodes */}
-        <div className="flex justify-between items-center">
-          <button
-            onClick={() => navigateEpisode('prev')}
-            disabled={!hasPrevEpisode || languageChangeInProgress}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-          >
-            ← Épisode précédent
-          </button>
-          
-          <span className="text-gray-400">
-            Épisode {selectedEpisode.episodeNumber} sur {episodes.length}
-          </span>
-          
-          <button
-            onClick={() => navigateEpisode('next')}
-            disabled={!hasNextEpisode || languageChangeInProgress}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-          >
-            Épisode suivant →
-          </button>
-        </div>
+        <span className="text-gray-300 font-medium">
+          {selectedEpisode.episodeNumber} / {episodes.length}
+        </span>
+        
+        <button
+          onClick={() => navigateEpisode('next')}
+          disabled={!hasNextEpisode || languageChangeInProgress}
+          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+        >
+          Suivant →
+        </button>
       </div>
-      
-      {/* Serveurs multiples */}
-      {episodeDetails?.sources && episodeDetails.sources.length > 1 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Serveurs disponibles</h3>
-          <div className="flex gap-2 flex-wrap">
-            {episodeDetails.sources.map((source, index) => (
-              <button
-                key={index}
-                onClick={() => changeServer(index)}
-                className={`px-3 py-1 rounded text-sm transition-colors ${
-                  selectedServer === index
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-                disabled={languageChangeInProgress}
-              >
-                {source.server} ({source.quality})
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
