@@ -70,7 +70,7 @@ export async function apiRequest(endpoint, options = {}) {
 // Fonctions spécifiques pour chaque endpoint
 export const AnimeAPI = {
   // Recherche d'animes
-  search: (query) => apiRequest('/api/search', { 
+  search: (query) => apiRequest(`/api/search?query=${encodeURIComponent(query)}`, { 
     method: 'GET'
   }).then(response => response.data),
   
@@ -79,7 +79,7 @@ export const AnimeAPI = {
   
   // Épisodes par saison
   getSeasonEpisodes: (animeId, season, language = 'vostfr') => 
-    apiRequest('/api/seasons', {
+    apiRequest(`/api/seasons?animeId=${animeId}&season=${season}&language=${language}`, {
       method: 'GET'
     }).then(response => response.data),
   
