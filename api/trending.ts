@@ -12,7 +12,7 @@ import {
   cleanPageContent,
   BASE_URL
 } from './lib/core';
-import { authenticAnimeSamaScraper } from './lib/authentic-anime-sama-scraper';
+import { realAnimeSamaScraper } from './lib/real-anime-sama-scraper';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -41,14 +41,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.log('📈 Fetching trending anime');
+    console.log('Fetching real trending anime from anime-sama.fr');
     
-    const axiosInstance = createAxiosInstance();
-    const response = await axiosInstance.get('/');
-    const cleanHtml = cleanPageContent(response.data);
-    const $ = cheerio.load(cleanHtml);
+    // Utiliser le catalogue réel comme source de trending
+    const realCatalogue = await realAnimeSamaScraper.getReallCatalogueAnimes();
     
-    const results: any[] = [];
+    // Utiliser le catalogue réel comme trending
+    const results = realCatalogue.slice(0, 20);
+    
+    setCache(cacheKey, results);
+    
+    return sendSuccess(res, results, {
+      count: results.length,
+      source: 'anime-sama.fr',
+      authentic: true
+    });
     
     // Extract trending anime from homepage
     $('.anime-card, .anime-item, .card-anime, .trending-anime, .popular-anime, .featured-anime').each((i: number, element: any) => {

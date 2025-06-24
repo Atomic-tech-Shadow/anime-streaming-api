@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess } from '../lib/core';
-import { animeSamaNavigator } from '../lib/anime-sama-navigator';
+import { realAnimeSamaScraper } from '../lib/real-anime-sama-scraper';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -32,51 +32,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return sendError(res, 400, 'Valid episode ID is required');
     }
 
-    console.log(`Episode request: ${episodeId}`);
+    console.log(`Real episode request: ${episodeId}`);
     
-    const episodeData = await animeSamaNavigator.getEpisodeStreaming(episodeId);
+    // Parse episode ID to extract anime and season info
+    const episodeParts = episodeId.split('-');
+    if (episodeParts.length < 3) {
+      return sendError(res, 400, 'Invalid episode ID format. Expected: anime-season-episode');
+    }
     
-    if (!episodeData || episodeData.sources.length === 0) {
-      return sendError(res, 404, 'No streaming sources found for this episode', {
-        note: 'This episode may not exist or may require authentication on anime-sama.fr'
-      });
+    const animeId = episodeParts[0];
+    const seasonPath = episodeParts.slice(1, -1).join('-');
+    const episodeNumber = parseInt(episodeParts[episodeParts.length - 1]);
+    
+    const realEpisodes = await realAnimeSamaScraper.getRealEpisodes(animeId, seasonPath);
+    const episodeData = realEpisodes.find(ep => ep.episodeNumber === episodeNumber);
+
+    if (!episodeData) {
+      return sendError(res, 404, 'Episode not found on anime-sama.fr');
     }
 
-    // Add proxy URLs to bypass CORS restrictions
-    const enhancedSources = episodeData.sources.map(source => ({
-      ...source,
-      proxyUrl: `/api/proxy/${encodeURIComponent(source.url)}`,
-      embedUrl: `/api/embed/${episodeId}`
-    }));
-
-    const enhancedEpisodeData = {
-      ...episodeData,
-      sources: enhancedSources,
-      embedUrl: `/api/embed/${episodeId}`,
-      corsInfo: {
-        note: 'Original URLs may have CORS restrictions. Use proxyUrl or embedUrl for direct access.',
-        proxyEndpoint: '/api/proxy/[url]',
-        embedEndpoint: '/api/embed/[episodeId]'
-      }
-    };
-
-    return sendSuccess(res, enhancedEpisodeData, {
-      episodeId,
+    return sendSuccess(res, {
+      id: episodeId,
       episodeNumber: episodeData.episodeNumber,
-      animeTitle: episodeData.animeTitle,
-      sourcesCount: episodeData.sources.length,
-      languages: [...new Set(episodeData.sources.map(s => s.language))],
-      servers: episodeData.availableServers,
-      serverIndices: [...new Set(episodeData.sources.map(s => s.serverIndex))],
-      source: 'anime-sama.fr',
-      method: 'authentic_structure_with_cors_bypass'
+      url: episodeData.url,
+      server: episodeData.server,
+      alternativeServers: episodeData.alternativeServers || [],
+      authentic: true,
+      source: 'anime-sama.fr'
     });
 
   } catch (error) {
-    console.error('Episode scraping error:', error);
-    return sendError(res, 500, 'Failed to fetch episode streaming sources', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      note: 'Using authentic anime-sama.fr structure extraction'
+    console.error('Real episode error:', error);
+    return sendError(res, 500, 'Cannot access anime-sama.fr episode data', {
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }

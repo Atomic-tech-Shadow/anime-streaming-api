@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess } from '../lib/core';
-import { animeSamaNavigator } from '../lib/anime-sama-navigator';
+import { realAnimeSamaScraper } from '../lib/real-anime-sama-scraper';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -32,22 +32,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return sendError(res, 400, 'Valid anime ID is required');
     }
 
-    console.log(`Anime details request: ${animeId}`);
+    console.log(`Real anime details request: ${animeId}`);
     
-    const animeDetails = await animeSamaNavigator.getAnimeDetails(animeId);
+    const animeDetails = await realAnimeSamaScraper.getRealAnimeSeasons(animeId);
     
     if (!animeDetails) {
-      return sendError(res, 404, 'Anime not found');
+      return sendError(res, 404, 'Anime not found on anime-sama.fr');
     }
 
     return sendSuccess(res, animeDetails, {
       animeId,
-      source: 'anime-sama.fr'
+      source: 'anime-sama.fr',
+      authentic: true
     });
 
   } catch (error) {
-    console.error('Anime details error:', error);
-    return sendError(res, 500, 'Failed to fetch anime details', {
+    console.error('Real anime details error:', error);
+    return sendError(res, 500, 'Cannot access anime-sama.fr data', {
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
