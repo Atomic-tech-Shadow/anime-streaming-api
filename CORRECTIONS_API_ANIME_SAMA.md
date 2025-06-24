@@ -9,12 +9,12 @@
 const API_BASE_URL = 'https://api-anime-sama.onrender.com';
 ```
 
-**SOLUTION**: Utilisez l'URL de votre API Replit locale
+**SOLUTION**: Utilisez l'URL de votre API Render déployée
 ```javascript
-// ✅ CORRECT - Configuration pour Replit
+// ✅ CORRECT - Configuration pour Render
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:5000'  
-  : 'https://your-repl-name.your-username.repl.co';
+  : 'https://api-anime-sama.onrender.com';
 ```
 
 ### 2. Endpoints API - Paramètres Incorrects
@@ -95,10 +95,10 @@ Créez un fichier `api-config.js` avec cette configuration:
 ```javascript
 // api-config.js - Configuration API Anime-Sama pour Replit
 export const API_CONFIG = {
-  // URL de base - à adapter selon votre Repl
+  // URL de base - Render déployé
   BASE_URL: process.env.NODE_ENV === 'development' 
     ? 'http://localhost:5000'
-    : 'https://votre-repl-name.votre-username.repl.co',
+    : 'https://api-anime-sama.onrender.com',
   
   // Endpoints corrects
   ENDPOINTS: {
