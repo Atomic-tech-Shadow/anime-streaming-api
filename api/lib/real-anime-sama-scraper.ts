@@ -234,10 +234,13 @@ export class RealAnimeSamaScraper {
       // Parser le fichier episodes.js réel
       const episodesJs = response.data;
       
-      // Extraire les vrais épisodes du fichier JS
+      // Extraire TOUS les serveurs du fichier JS comme sur anime-sama.fr
       const eps1Match = episodesJs.match(/var\s+eps1\s*=\s*(\[[\s\S]*?\]);/);
       const eps2Match = episodesJs.match(/var\s+eps2\s*=\s*(\[[\s\S]*?\]);/);
       const eps3Match = episodesJs.match(/var\s+eps3\s*=\s*(\[[\s\S]*?\]);/);
+      const eps4Match = episodesJs.match(/var\s+eps4\s*=\s*(\[[\s\S]*?\]);/);
+      const eps5Match = episodesJs.match(/var\s+eps5\s*=\s*(\[[\s\S]*?\]);/);
+      const epsASMatch = episodesJs.match(/var\s+epsAS\s*=\s*(\[[\s\S]*?\]);/);
       
       const realEpisodes: any[] = [];
       
@@ -298,30 +301,47 @@ export class RealAnimeSamaScraper {
         }
       }
       
-      if (eps3Match) {
-        try {
-          let cleanedArray = eps3Match[1]
-            .replace(/'/g, '"')
-            .replace(/,\s*\]/g, ']')
-            .replace(/,\s*,/g, ',');
-          
-          const eps3Data = JSON.parse(cleanedArray);
-          eps3Data.forEach((url: string, index: number) => {
-            if (url && url.trim() && url !== '') {
-              const existingEpisode = realEpisodes.find(ep => ep.episodeNumber === index + 1);
-              if (existingEpisode) {
-                existingEpisode.alternativeServers = existingEpisode.alternativeServers || [];
-                existingEpisode.alternativeServers.push({
-                  server: 'eps3',
-                  url: url
-                });
+      // Traiter TOUS les serveurs comme anime-sama.fr
+      const serverConfigs = [
+        { match: eps3Match, name: 'eps3' },
+        { match: eps4Match, name: 'eps4' },
+        { match: eps5Match, name: 'eps5' },
+        { match: epsASMatch, name: 'epsAS' }
+      ];
+
+      serverConfigs.forEach(({ match, name }) => {
+        if (match) {
+          try {
+            let cleanedArray = match[1]
+              .replace(/'/g, '"')
+              .replace(/,\s*\]/g, ']')
+              .replace(/,\s*,/g, ',');
+            
+            const serverData = JSON.parse(cleanedArray);
+            serverData.forEach((url: string, index: number) => {
+              if (url && url.trim() && url !== '') {
+                let episodeIndex = index;
+                if (seasonPath === 'saison11/vf' || seasonPath === 'saison11/vostfr') {
+                  episodeIndex = 1087 + index - 1;
+                } else {
+                  episodeIndex = index + 1;
+                }
+                
+                const existingEpisode = realEpisodes.find(ep => ep.episodeNumber === episodeIndex);
+                if (existingEpisode) {
+                  existingEpisode.alternativeServers = existingEpisode.alternativeServers || [];
+                  existingEpisode.alternativeServers.push({
+                    server: name,
+                    url: url
+                  });
+                }
               }
-            }
-          });
-        } catch (parseError) {
-          console.log('Error parsing eps3:', parseError);
+            });
+          } catch (parseError) {
+            console.log(`Error parsing ${name}:`, parseError);
+          }
         }
-      }
+      });
       
       console.log(`Extracted ${realEpisodes.length} real episodes from ${episodesUrl}`);
       return realEpisodes;
