@@ -153,6 +153,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - January 18, 2025. Created comprehensive documentation suite - added CONFIGURATION_GUIDE.md for installation/setup, UNIVERSAL_SYSTEM.md for technical details, updated README.md with quick start guide. Documentation now covers all aspects from basic setup to advanced system architecture.
 - January 18, 2025. Configured documentation to use production API URL (https://api-anime-sama.onrender.com) - updated all examples, guides, and configuration files to reference the deployed API. Added api-config.js with centralized configuration and utility functions for frontend integration.
 - June 24, 2025. Migration from Replit Agent to standard Replit environment completed successfully - fixed CORS iframe restrictions with enhanced headers (X-Frame-Options: ALLOWALL, CSP: frame-ancestors *), created proxy endpoints (/api/proxy/) for streaming sources, added iframe-compatible CORS configuration. Ready for Render deployment with full iframe embedding support.
+- June 24, 2025. Diagnosed critical episode correspondence bug - API correctly returns unique URLs for different episodes (verified episodes 1, 5, 10 have different video IDs), problem is in frontend cache/state management. Created comprehensive correction document with cache clearing, race condition fixes, and debugging tools for episode selection issues.
 
 ## User Preferences
 

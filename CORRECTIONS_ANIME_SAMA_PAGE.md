@@ -4,6 +4,168 @@
 **Version**: Corrections post-migration Replit  
 **API Cible**: http://localhost:5000 (développement) / https://votre-app.onrender.com (production)
 
+## 🚨 PROBLÈME CRITIQUE: Mauvais Épisode Joué
+
+**❌ SYMPTÔME**: Quand vous sélectionnez un épisode, ce n'est pas le bon épisode qui se lit dans le lecteur.
+
+**🔍 DIAGNOSTIC**: L'API fonctionne correctement et retourne les bonnes URLs d'épisode (vérifiés: épisode 1, 5 et 10 ont des URLs uniques). Le problème est dans le frontend - probablement cache d'épisode ou mauvaise gestion d'état.
+
+**✅ CORRECTIONS URGENTES**:
+
+### A. Cache d'Épisode Buggé
+```javascript
+// PROBLÈME: Cache qui garde les anciennes données d'épisode
+// SOLUTION: Vider le cache à chaque changement d'épisode
+
+const loadEpisode = async (episodeId) => {
+  // CRITIQUE: Vider le cache avant de charger un nouvel épisode
+  if (episodeCache) {
+    episodeCache.delete(episodeId);
+    episodeCache.delete(`episode-${episodeId}`);
+    // Vider aussi les clés similaires
+    for (const [key] of episodeCache.entries()) {
+      if (key.includes(episodeId.split('-')[0])) {
+        episodeCache.delete(key);
+      }
+    }
+  }
+  
+  // Forcer rechargement depuis API
+  const response = await fetch(`${API_BASE_URL}/api/episode/${episodeId}?_=${Date.now()}`);
+  const data = await response.json();
+  
+  if (data.success && data.data.sources.length > 0) {
+    // CRITIQUE: Utiliser embedUrl qui garantit le bon épisode
+    const embedUrl = `${API_BASE_URL}${data.data.sources[0].embedUrl}`;
+    
+    // Vider l'iframe avant de charger le nouveau
+    if (videoIframe) {
+      videoIframe.src = 'about:blank';
+      await new Promise(resolve => setTimeout(resolve, 100)); // Attendre 100ms
+    }
+    
+    videoIframe.src = embedUrl;
+    
+    console.log(`Épisode chargé: ${episodeId} -> ${embedUrl}`);
+  }
+};
+```
+
+### B. État React Conflictuel
+```javascript
+// PROBLÈME: État React qui ne se met pas à jour correctement
+// SOLUTION: Réinitialiser complètement l'état
+
+const [currentEpisode, setCurrentEpisode] = useState(null);
+const [videoSrc, setVideoSrc] = useState('');
+const [lastEpisodeId, setLastEpisodeId] = useState('');
+
+const handleEpisodeClick = async (episode) => {
+  // CRITIQUE: Vérifier si ce n'est pas déjà l'épisode en cours
+  if (lastEpisodeId === episode.id && videoSrc) {
+    console.log('Épisode déjà chargé:', episode.id);
+    return;
+  }
+  
+  // Réinitialiser complètement l'état
+  setCurrentEpisode(null);
+  setVideoSrc('');
+  setLoading(true);
+  
+  try {
+    // Charger les détails de l'épisode
+    const response = await fetch(`${API_BASE_URL}/api/episode/${episode.id}`);
+    const data = await response.json();
+    
+    if (data.success && data.data.sources.length > 0) {
+      const newVideoSrc = `${API_BASE_URL}${data.data.sources[0].embedUrl}`;
+      
+      // CRITIQUE: Mettre à jour l'état dans le bon ordre
+      setCurrentEpisode(episode);
+      setVideoSrc(newVideoSrc);
+      setLastEpisodeId(episode.id);
+      
+      console.log(`Nouvel épisode: ${episode.id} -> ${newVideoSrc}`);
+    }
+  } catch (error) {
+    console.error('Erreur chargement épisode:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+### C. URL d'Épisode Incorrecte
+```javascript
+// PROBLÈME: Construction d'URL d'épisode inconsistante
+// SOLUTION: Utiliser exactement le même format que l'API
+
+const buildCorrectEpisodeId = (animeId, episodeNumber, language, seasonNumber = null) => {
+  // CRITIQUE: Format exact selon l'API
+  if (seasonNumber && seasonNumber > 1) {
+    return `${animeId}-saison${seasonNumber}-episode-${episodeNumber}-${language.toLowerCase()}`;
+  }
+  return `${animeId}-episode-${episodeNumber}-${language.toLowerCase()}`;
+};
+
+// Test avec My Hero Academia
+const testEpisodeIds = [
+  buildCorrectEpisodeId('my-hero-academia', 1, 'vostfr'),    // my-hero-academia-episode-1-vostfr
+  buildCorrectEpisodeId('my-hero-academia', 5, 'vostfr'),    // my-hero-academia-episode-5-vostfr
+  buildCorrectEpisodeId('my-hero-academia', 1, 'vostfr', 7), // my-hero-academia-saison7-episode-1-vostfr
+];
+```
+
+### D. Race Condition dans le Lecteur
+```javascript
+// PROBLÈME: Plusieurs épisodes chargés en même temps
+// SOLUTION: Queue de chargement
+
+let episodeLoadingQueue = null;
+
+const loadEpisodeWithQueue = async (episodeId) => {
+  // Annuler le chargement précédent
+  if (episodeLoadingQueue) {
+    episodeLoadingQueue.cancel = true;
+  }
+  
+  // Créer nouvelle tâche
+  const currentTask = { cancel: false, episodeId };
+  episodeLoadingQueue = currentTask;
+  
+  try {
+    await new Promise(resolve => setTimeout(resolve, 100)); // Délai anti-race
+    
+    // Vérifier si la tâche n'a pas été annulée
+    if (currentTask.cancel) {
+      console.log('Chargement épisode annulé:', episodeId);
+      return;
+    }
+    
+    // Charger l'épisode
+    const response = await fetch(`${API_BASE_URL}/api/episode/${episodeId}`);
+    const data = await response.json();
+    
+    // Vérifier encore si pas annulé
+    if (currentTask.cancel) {
+      console.log('Chargement épisode annulé après fetch:', episodeId);
+      return;
+    }
+    
+    // Mettre à jour le lecteur
+    if (data.success && data.data.sources.length > 0) {
+      const embedUrl = `${API_BASE_URL}${data.data.sources[0].embedUrl}`;
+      updateVideoPlayer(embedUrl, episodeId);
+    }
+    
+  } catch (error) {
+    if (!currentTask.cancel) {
+      console.error('Erreur chargement épisode:', error);
+    }
+  }
+};
+```
+
 ## 🚨 Problèmes Identifiés et Corrections Requises
 
 ### 1. Configuration API Obsolète
@@ -462,6 +624,91 @@ const VideoPlayer = ({ episodeId, sources }) => {
 1. Tester tous les animes populaires
 2. Vérifier compatibilité mobile
 3. Valider performance cache
+
+## 🧪 Test de Correspondance Épisode
+
+Ajoutez ce code de test pour vérifier que le bon épisode se charge :
+
+```javascript
+const testEpisodeCorrespondence = async () => {
+  console.log('🧪 Test correspondance épisode/vidéo');
+  
+  const testCases = [
+    { episodeId: 'my-hero-academia-episode-1-vostfr', expectedEpisode: 1 },
+    { episodeId: 'my-hero-academia-episode-5-vostfr', expectedEpisode: 5 },
+    { episodeId: 'my-hero-academia-episode-10-vostfr', expectedEpisode: 10 }
+  ];
+  
+  for (const testCase of testCases) {
+    try {
+      console.log(`Test épisode ${testCase.expectedEpisode}...`);
+      
+      // Charger l'épisode
+      const response = await fetch(`${API_BASE_URL}/api/episode/${testCase.episodeId}`);
+      const data = await response.json();
+      
+      if (data.success && data.data.sources.length > 0) {
+        const url = data.data.sources[0].url;
+        console.log(`Épisode ${testCase.expectedEpisode}: ${url}`);
+        
+        // Vérifier que l'URL est unique (pas de cache buggé)
+        const urlHash = url.split('/').pop();
+        console.log(`Hash unique: ${urlHash}`);
+        
+        // Simuler le chargement dans iframe
+        const embedUrl = `${API_BASE_URL}${data.data.sources[0].embedUrl}`;
+        console.log(`Iframe URL: ${embedUrl}`);
+        
+      } else {
+        console.error(`❌ Pas de sources pour épisode ${testCase.expectedEpisode}`);
+      }
+    } catch (error) {
+      console.error(`❌ Erreur test épisode ${testCase.expectedEpisode}:`, error);
+    }
+  }
+  
+  console.log('🎉 Test terminé - vérifiez que chaque épisode a une URL unique');
+};
+
+// Lancer le test
+testEpisodeCorrespondence();
+```
+
+## 🔧 Débogage en Temps Réel
+
+Ajoutez ces logs dans votre page pour identifier le problème :
+
+```javascript
+// Dans votre fonction de chargement d'épisode
+const loadEpisode = async (episodeId) => {
+  console.log(`🎬 DÉBUT chargement épisode: ${episodeId}`);
+  console.log(`🎬 Timestamp: ${new Date().toISOString()}`);
+  
+  const response = await fetch(`${API_BASE_URL}/api/episode/${episodeId}`);
+  const data = await response.json();
+  
+  if (data.success) {
+    const url = data.data.sources[0].url;
+    const embedUrl = data.data.sources[0].embedUrl;
+    
+    console.log(`🎬 URL reçue: ${url}`);
+    console.log(`🎬 Embed URL: ${embedUrl}`);
+    console.log(`🎬 Hash unique: ${url.split('/').pop()}`);
+    
+    // Vérifier si l'iframe change vraiment
+    const currentIframeSrc = videoIframe.src;
+    const newIframeSrc = `${API_BASE_URL}${embedUrl}`;
+    
+    console.log(`🎬 Iframe actuelle: ${currentIframeSrc}`);
+    console.log(`🎬 Nouvelle iframe: ${newIframeSrc}`);
+    console.log(`🎬 Changement: ${currentIframeSrc !== newIframeSrc ? 'OUI' : 'NON'}`);
+    
+    videoIframe.src = newIframeSrc;
+    
+    console.log(`🎬 FIN chargement épisode: ${episodeId}`);
+  }
+};
+```
 
 ## 🧪 Code de Test
 
