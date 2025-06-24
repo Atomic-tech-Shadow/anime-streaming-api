@@ -78,10 +78,12 @@ function adaptResponse(res: any): VercelResponse {
 }
 
 const server = createServer(async (req, res) => {
-  // Configuration CORS
+  // Configuration CORS renforcée
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Authorization, X-Frame-Options');
+  res.setHeader('X-Frame-Options', 'ALLOWALL');
+  res.setHeader('Content-Security-Policy', 'frame-ancestors *');
   
   if (req.method === 'OPTIONS') {
     res.statusCode = 200;
@@ -144,6 +146,15 @@ const server = createServer(async (req, res) => {
       const { default: handler } = await import('../api/embed/[episodeId].js');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler embed:', error);
+        throw error;
+      });
+    }
+    else if (pathname.startsWith('/api/proxy/')) {
+      const url = pathname.split('/api/proxy/')[1];
+      vercelReq.query = { ...vercelReq.query, url };
+      const { default: handler } = await import('../api/proxy/[url].js');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler proxy:', error);
         throw error;
       });
     }
@@ -225,6 +236,25 @@ const server = createServer(async (req, res) => {
         res.statusCode = 404;
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ error: 'Demo page not found' }));
+      }
+    }
+    else if (pathname === '/cors-test') {
+      // Servir la page de test CORS
+      const fs = await import('fs');
+      const path = await import('path');
+      try {
+        const htmlPath = path.join(process.cwd(), 'public', 'cors-test.html');
+        const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('X-Frame-Options', 'ALLOWALL');
+        res.setHeader('Content-Security-Policy', 'frame-ancestors *');
+        res.statusCode = 200;
+        res.end(htmlContent);
+      } catch (error) {
+        console.error('Erreur lecture fichier cors-test:', error);
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'CORS test page not found' }));
       }
     }
     else if (pathname === '/' || pathname === '/api') {

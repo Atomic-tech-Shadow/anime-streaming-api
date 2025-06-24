@@ -248,10 +248,22 @@ export function setCorsHeaders(res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.setHeader('X-Frame-Options', 'ALLOWALL');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Content-Security-Policy', 'frame-ancestors *');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
+  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
+}
+
+// Enhanced CORS headers specifically for iframe embedding
+export function setIframeCorsHeaders(res: any) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Frame-Options');
+  res.setHeader('X-Frame-Options', 'ALLOWALL');
+  res.setHeader('Content-Security-Policy', 'frame-ancestors *; script-src *; style-src *; img-src *');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
 }
 

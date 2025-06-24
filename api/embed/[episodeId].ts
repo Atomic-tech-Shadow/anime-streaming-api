@@ -1,9 +1,9 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { sendError, sendSuccess, setCorsHeaders, createAxiosInstance } from '../lib/core';
+import { sendError, sendSuccess, setIframeCorsHeaders, createAxiosInstance } from '../lib/core';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Configuration CORS pour l'embed
-  setCorsHeaders(res);
+  setIframeCorsHeaders(res);
   
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
