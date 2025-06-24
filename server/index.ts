@@ -214,49 +214,7 @@ const server = createServer(async (req, res) => {
         throw error;
       });
     }
-    else if (pathname === '/docs') {
-      const { default: handler } = await import('../api/docs.js');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler docs:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/demo') {
-      // Servir la page HTML démo
-      const fs = await import('fs');
-      const path = await import('path');
-      try {
-        const htmlPath = path.join(process.cwd(), 'public', 'anime-sama.html');
-        const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.statusCode = 200;
-        res.end(htmlContent);
-      } catch (error) {
-        console.error('Erreur lecture fichier demo:', error);
-        res.statusCode = 404;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ error: 'Demo page not found' }));
-      }
-    }
-    else if (pathname === '/cors-test') {
-      // Servir la page de test CORS
-      const fs = await import('fs');
-      const path = await import('path');
-      try {
-        const htmlPath = path.join(process.cwd(), 'public', 'cors-test.html');
-        const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.setHeader('X-Frame-Options', 'ALLOWALL');
-        res.setHeader('Content-Security-Policy', 'frame-ancestors *');
-        res.statusCode = 200;
-        res.end(htmlContent);
-      } catch (error) {
-        console.error('Erreur lecture fichier cors-test:', error);
-        res.statusCode = 404;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ error: 'CORS test page not found' }));
-      }
-    }
+
     else if (pathname === '/' || pathname === '/api') {
       const { default: handler } = await import('../api/index.js');
       await handler(vercelReq, vercelRes).catch(error => {
@@ -283,8 +241,6 @@ const server = createServer(async (req, res) => {
 
 server.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
   console.log(`🚀 API Anime Sama démarrée sur http://0.0.0.0:${PORT}`);
-  console.log(`📚 Documentation: http://0.0.0.0:${PORT}/docs`);
-  console.log(`🎬 Demo: http://0.0.0.0:${PORT}/demo`);
   console.log(`🔍 Test: http://0.0.0.0:${PORT}/api/health`);
 });
 

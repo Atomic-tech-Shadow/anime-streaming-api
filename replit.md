@@ -157,6 +157,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - June 24, 2025. Completed full cleanup of demo/fallback code - removed all synthetic data generation, mock sources, and placeholder content. API now returns 100% authentic data from anime-sama.fr or proper error messages for non-existent content. No more fake URLs or generated sources.
 - January 18, 2025. Migration from Replit Agent to standard Replit environment completed successfully - all dependencies installed, server running on port 5000, API endpoints fully functional. Created comprehensive API configuration corrections document (CORRECTIONS_API_ANIME_SAMA.md) to fix frontend integration issues with proper endpoints, headers, and URL configurations.
 - January 18, 2025. Fixed search functionality completely - expanded anime database to 30+ popular animes, improved search algorithm with multiple match types, added support for both 'q' and 'query' parameters, corrected One Piece episode 1087 numbering (1087-1122), and implemented intelligent fallback system. API now 100% functional locally, ready for Render deployment.
+- January 18, 2025. Cleaned up project by removing all demo and documentation endpoints - removed api/docs.ts, api/docs.html, demo routes, CORS test pages, and associated documentation files. API now contains only core functionality endpoints for production use.
 
 ## User Preferences
 
