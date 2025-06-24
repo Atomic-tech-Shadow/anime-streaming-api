@@ -92,7 +92,48 @@ async function generateSeasonEpisodes(
     console.log(`🔧 Forcing minimum 12 episodes for ${animeId}`);
   }
   
-  // Calculer la plage d'épisodes pour cette saison
+  // Configuration spéciale One Piece avec numérotation correcte
+  if (animeId === 'one-piece') {
+    const onePieceRanges = [
+      { start: 1, end: 61 },      // Saga 1 (East Blue)
+      { start: 62, end: 135 },    // Saga 2 (Alabasta)
+      { start: 136, end: 206 },   // Saga 3 (Ile céleste)
+      { start: 207, end: 325 },   // Saga 4 (Water Seven)
+      { start: 326, end: 384 },   // Saga 5 (Thriller Bark)
+      { start: 385, end: 516 },   // Saga 6 (Guerre au Sommet)
+      { start: 517, end: 574 },   // Saga 7 (Ile des Hommes-Poissons)
+      { start: 575, end: 746 },   // Saga 8 (Dressrosa)
+      { start: 747, end: 889 },   // Saga 9 (Ile Tougato)
+      { start: 890, end: 1086 },  // Saga 10 (Pays des Wa)
+      { start: 1087, end: 1122 }  // Saga 11 (Egghead)
+    ];
+    
+    if (seasonNumber > 0 && seasonNumber <= onePieceRanges.length) {
+      const range = onePieceRanges[seasonNumber - 1];
+      
+      console.log(`✅ One Piece: Generating episodes ${range.start}-${range.end} for season ${seasonNumber}`);
+      
+      for (let episodeNum = range.start; episodeNum <= range.end; episodeNum++) {
+        const episodeId = `${animeId}-episode-${episodeNum}-${language.toLowerCase()}`;
+        
+        episodes.push({
+          id: episodeId,
+          episodeNumber: episodeNum,
+          title: `Episode ${episodeNum}`,
+          language: language.toLowerCase(),
+          seasonNumber,
+          available: true,
+          url: `https://anime-sama.fr/catalogue/${animeId}/saison${seasonNumber}/${language.toLowerCase()}/episode-${episodeNum}`,
+          embedUrl: `/api/embed/${episodeId}`
+        });
+      }
+      
+      console.log(`📺 Generated ${episodes.length} episodes for One Piece season ${seasonNumber}`);
+      return episodes;
+    }
+  }
+
+  // Calculer la plage d'épisodes pour cette saison (autres animes)
   const episodeRanges = getEpisodeRangesForAnime(animeId, totalEpisodes);
   
   if (seasonNumber > episodeRanges.length) {
@@ -117,7 +158,7 @@ async function generateSeasonEpisodes(
       id: episodeId,
       episodeNumber: episodeNum,
       title: `Episode ${episodeNum}`,
-      language,
+      language: language.toLowerCase(),
       seasonNumber,
       available: true,
       url: `https://anime-sama.fr/catalogue/${animeId}/saison${seasonNumber}/${language.toLowerCase()}/episode-${episodeNum}`,
