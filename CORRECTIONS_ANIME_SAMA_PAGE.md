@@ -4,7 +4,154 @@
 **Version**: Corrections post-migration Replit  
 **API Cible**: http://localhost:5000 (développement) / https://votre-app.onrender.com (production)
 
-## 🚨 PROBLÈME CRITIQUE: Mauvais Épisode Joué
+## 🚨 PROBLÈME CRITIQUE 1: Sélection de Langue Buggée
+
+**SYMPTÔME**: Quand vous changez de VF à VOSTFR (ou vice versa), l'ancienne langue continue de jouer.
+
+**DIAGNOSTIC**: L'API retourne bien des URLs différentes pour chaque langue (VF: `vjmxc1jxhw8f`, VOSTFR: `j2ect4ptgep1`). Le bug est dans le cache frontend qui garde l'ancienne langue.
+
+**CORRECTIONS URGENTES**:
+
+### A. Vider Cache Complet au Changement de Langue
+```javascript
+const handleLanguageChange = async (newLanguage) => {
+  console.log(`Changement langue: ${selectedLanguage} -> ${newLanguage}`);
+  
+  // CRITIQUE: Vider tout le cache d'épisodes
+  if (episodeCache) {
+    episodeCache.clear();
+  }
+  
+  // Vider le localStorage de cache
+  Object.keys(localStorage).forEach(key => {
+    if (key.includes('episode') || key.includes('anime')) {
+      localStorage.removeItem(key);
+    }
+  });
+  
+  // Réinitialiser état du lecteur
+  setCurrentEpisode(null);
+  setVideoSrc('');
+  setEpisodes([]);
+  
+  // Attendre un délai pour éviter race conditions
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  // Mettre à jour la langue
+  setSelectedLanguage(newLanguage);
+  
+  // Recharger les épisodes avec nouvelle langue
+  if (selectedAnime && selectedSeason) {
+    await loadEpisodes(selectedAnime.id, selectedSeason, newLanguage);
+  }
+};
+```
+
+### B. Construction ID Épisode avec Langue
+```javascript
+// PROBLÈME: L'ID d'épisode ne change pas avec la langue
+// SOLUTION: Toujours inclure la langue dans l'ID
+
+const buildEpisodeIdWithLanguage = (animeId, episodeNumber, language, season = null) => {
+  const langCode = language.toLowerCase(); // 'vf' ou 'vostfr'
+  
+  if (season && season > 1) {
+    return `${animeId}-saison${season}-episode-${episodeNumber}-${langCode}`;
+  }
+  return `${animeId}-episode-${episodeNumber}-${langCode}`;
+};
+
+// Usage avec protection
+const loadEpisodeWithLanguage = async (animeId, episodeNumber, language) => {
+  const episodeId = buildEpisodeIdWithLanguage(animeId, episodeNumber, language);
+  
+  console.log(`Chargement épisode avec langue: ${episodeId}`);
+  
+  // Force reload sans cache
+  const response = await fetch(`${API_BASE_URL}/api/episode/${episodeId}?lang=${language}&_=${Date.now()}`);
+  const data = await response.json();
+  
+  return data;
+};
+```
+
+### C. State Management Séparé par Langue
+```javascript
+// PROBLÈME: Un seul état pour toutes les langues
+// SOLUTION: État séparé par langue
+
+const [episodesByLanguage, setEpisodesByLanguage] = useState({
+  VF: {},
+  VOSTFR: {}
+});
+
+const [currentVideoByLanguage, setCurrentVideoByLanguage] = useState({
+  VF: null,
+  VOSTFR: null
+});
+
+const switchLanguage = async (newLanguage) => {
+  // Sauvegarder l'état actuel
+  if (currentEpisode && videoSrc) {
+    setCurrentVideoByLanguage(prev => ({
+      ...prev,
+      [selectedLanguage]: {
+        episode: currentEpisode,
+        videoSrc: videoSrc
+      }
+    }));
+  }
+  
+  // Changer la langue
+  setSelectedLanguage(newLanguage);
+  
+  // Restaurer l'état pour la nouvelle langue
+  const savedState = currentVideoByLanguage[newLanguage];
+  if (savedState) {
+    setCurrentEpisode(savedState.episode);
+    setVideoSrc(savedState.videoSrc);
+  } else {
+    // Première fois dans cette langue, recharger
+    setCurrentEpisode(null);
+    setVideoSrc('');
+    await loadEpisodesForLanguage(newLanguage);
+  }
+};
+```
+
+### D. Debounce Anti-Race pour Changement Langue
+```javascript
+let languageChangeTimeout = null;
+
+const debouncedLanguageChange = (newLanguage) => {
+  // Annuler changement précédent
+  if (languageChangeTimeout) {
+    clearTimeout(languageChangeTimeout);
+  }
+  
+  // Nouveau changement avec délai
+  languageChangeTimeout = setTimeout(async () => {
+    await performLanguageChange(newLanguage);
+  }, 300); // 300ms de délai
+};
+
+const performLanguageChange = async (newLanguage) => {
+  if (newLanguage === selectedLanguage) {
+    console.log('Même langue, ignore');
+    return;
+  }
+  
+  console.log(`Changement définitif: ${selectedLanguage} -> ${newLanguage}`);
+  
+  // Vider tout cache lié à l'ancienne langue
+  clearLanguageCache(selectedLanguage);
+  
+  // Effectuer le changement
+  await handleLanguageChange(newLanguage);
+};
+```
+
+## 🚨 PROBLÈME CRITIQUE 2: Mauvais Épisode Joué
 
 **❌ SYMPTÔME**: Quand vous sélectionnez un épisode, ce n'est pas le bon épisode qui se lit dans le lecteur.
 
@@ -624,6 +771,81 @@ const VideoPlayer = ({ episodeId, sources }) => {
 1. Tester tous les animes populaires
 2. Vérifier compatibilité mobile
 3. Valider performance cache
+
+## 🧪 Test Changement de Langue
+
+Testez spécifiquement le changement de langue :
+
+```javascript
+const testLanguageSwitch = async () => {
+  console.log('🧪 Test changement VF/VOSTFR');
+  
+  const testCases = [
+    { episodeNumber: 1, vf: 'my-hero-academia-episode-1-vf', vostfr: 'my-hero-academia-episode-1-vostfr' },
+    { episodeNumber: 5, vf: 'my-hero-academia-episode-5-vf', vostfr: 'my-hero-academia-episode-5-vostfr' }
+  ];
+  
+  for (const testCase of testCases) {
+    console.log(`Test épisode ${testCase.episodeNumber}:`);
+    
+    // Test VF
+    const vfResponse = await fetch(`${API_BASE_URL}/api/episode/${testCase.vf}`);
+    const vfData = await vfResponse.json();
+    
+    // Test VOSTFR
+    const vostfrResponse = await fetch(`${API_BASE_URL}/api/episode/${testCase.vostfr}`);
+    const vostfrData = await vostfrResponse.json();
+    
+    if (vfData.success && vostfrData.success) {
+      const vfUrl = vfData.data.sources[0].url;
+      const vostfrUrl = vostfrData.data.sources[0].url;
+      
+      console.log(`Épisode ${testCase.episodeNumber} VF: ${vfUrl}`);
+      console.log(`Épisode ${testCase.episodeNumber} VOSTFR: ${vostfrUrl}`);
+      
+      // Vérifier que les URLs sont différentes
+      if (vfUrl === vostfrUrl) {
+        console.error(`❌ ERREUR: Même URL pour VF et VOSTFR !`);
+      } else {
+        console.log(`✅ URLs différentes pour VF/VOSTFR`);
+      }
+      
+      // Extraire identifiants uniques
+      const vfId = vfUrl.split('/').pop();
+      const vostfrId = vostfrUrl.split('/').pop();
+      console.log(`VF ID: ${vfId}, VOSTFR ID: ${vostfrId}`);
+    }
+    
+    console.log('---');
+  }
+};
+
+// Lancer le test
+testLanguageSwitch();
+```
+
+## 🔧 Débogage Changement Langue
+
+Ajoutez ces logs pour traquer les changements de langue :
+
+```javascript
+const debugLanguageChange = (oldLang, newLang, episodeId) => {
+  console.log(`🌐 CHANGEMENT LANGUE`);
+  console.log(`🌐 Ancienne: ${oldLang}`);
+  console.log(`🌐 Nouvelle: ${newLang}`);
+  console.log(`🌐 Épisode: ${episodeId}`);
+  console.log(`🌐 Cache avant:`, episodeCache.size());
+  console.log(`🌐 État vidéo avant:`, videoIframe?.src);
+  console.log(`🌐 Timestamp:`, new Date().toISOString());
+  
+  // Après changement
+  setTimeout(() => {
+    console.log(`🌐 Cache après:`, episodeCache.size());
+    console.log(`🌐 État vidéo après:`, videoIframe?.src);
+    console.log(`🌐 CHANGEMENT TERMINÉ`);
+  }, 1000);
+};
+```
 
 ## 🧪 Test de Correspondance Épisode
 
