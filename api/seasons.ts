@@ -40,10 +40,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Extraire les vrais épisodes de cette saison
+    console.log(`Extracting episodes from: ${animeId}/${targetSeason.path}`);
     const realEpisodes = await realAnimeSamaScraper.getRealEpisodes(animeId, targetSeason.path);
     
     const episodes = realEpisodes.map(ep => ({
-      id: `${animeId}-${targetSeason.path}-${ep.episodeNumber}`,
+      id: `${animeId}-${targetSeason.path.replace('/', '-')}-${ep.episodeNumber}`,
       episodeNumber: ep.episodeNumber,
       title: `Episode ${ep.episodeNumber}`,
       url: ep.url,

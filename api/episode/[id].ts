@@ -35,13 +35,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`Real episode request: ${episodeId}`);
     
     // Parse episode ID to extract anime and season info
+    // Format attendu: one-piece-saison11-vf-1087
     const episodeParts = episodeId.split('-');
-    if (episodeParts.length < 3) {
-      return sendError(res, 400, 'Invalid episode ID format. Expected: anime-season-episode');
+    if (episodeParts.length < 4) {
+      return sendError(res, 400, 'Invalid episode ID format. Expected: anime-seasonX-lang-episode');
     }
     
-    const animeId = episodeParts[0];
-    const seasonPath = episodeParts.slice(1, -1).join('-');
+    const animeId = episodeParts[0] + '-' + episodeParts[1]; // one-piece
+    const seasonPath = `${episodeParts[2]}/${episodeParts[3]}`;
     const episodeNumber = parseInt(episodeParts[episodeParts.length - 1]);
     
     const realEpisodes = await realAnimeSamaScraper.getRealEpisodes(animeId, seasonPath);

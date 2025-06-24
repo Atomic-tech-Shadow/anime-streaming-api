@@ -149,13 +149,49 @@ export class RealAnimeSamaScraper {
             const seasonName = parts[1];
             const seasonPath = parts[2];
             
-            realSeasons.push({
-              number: index + 1,
-              name: seasonName,
-              path: seasonPath,
-              url: `${BASE_URL}/catalogue/${animeId}/${seasonPath}/`,
-              authentic: true
-            });
+            // Extraction du numéro de saison depuis le path et le nom
+            let seasonNumber = index + 1;
+            const sagaMatch = seasonPath.match(/saga(\d+)/i) || seasonPath.match(/saison(\d+)/i);
+            const nameMatch = seasonName.match(/Saga\s+(\d+)/i);
+            
+            if (sagaMatch) {
+              seasonNumber = parseInt(sagaMatch[1]);
+            } else if (nameMatch) {
+              seasonNumber = parseInt(nameMatch[1]);
+            }
+            
+            // Ajouter les versions VF et VOSTFR pour One Piece
+            if (animeId === 'one-piece' && seasonPath.includes('vostfr')) {
+              const vfPath = seasonPath.replace('vostfr', 'vf');
+              
+              // Version VOSTFR
+              realSeasons.push({
+                number: seasonNumber,
+                name: seasonName + ' (VOSTFR)',
+                path: seasonPath,
+                language: 'VOSTFR',
+                url: `${BASE_URL}/catalogue/${animeId}/${seasonPath}/`,
+                authentic: true
+              });
+              
+              // Version VF
+              realSeasons.push({
+                number: seasonNumber + 100, // Offset pour différencier VF
+                name: seasonName + ' (VF)',
+                path: vfPath,
+                language: 'VF',
+                url: `${BASE_URL}/catalogue/${animeId}/${vfPath}/`,
+                authentic: true
+              });
+            } else {
+              realSeasons.push({
+                number: seasonNumber,
+                name: seasonName,
+                path: seasonPath,
+                url: `${BASE_URL}/catalogue/${animeId}/${seasonPath}/`,
+                authentic: true
+              });
+            }
           }
         });
       }
@@ -194,19 +230,33 @@ export class RealAnimeSamaScraper {
       const episodesJs = response.data;
       
       // Extraire les vrais épisodes du fichier JS
-      const eps1Match = episodesJs.match(/var\s+eps1\s*=\s*(\[.*?\]);/s);
-      const eps2Match = episodesJs.match(/var\s+eps2\s*=\s*(\[.*?\]);/s);
-      const eps3Match = episodesJs.match(/var\s+eps3\s*=\s*(\[.*?\]);/s);
+      const eps1Match = episodesJs.match(/var\s+eps1\s*=\s*(\[[\s\S]*?\]);/);
+      const eps2Match = episodesJs.match(/var\s+eps2\s*=\s*(\[[\s\S]*?\]);/);
+      const eps3Match = episodesJs.match(/var\s+eps3\s*=\s*(\[[\s\S]*?\]);/);
       
       const realEpisodes: any[] = [];
       
       if (eps1Match) {
         try {
-          const eps1Data = JSON.parse(eps1Match[1]);
+          // Nettoyer le code JavaScript pour le rendre JSON-compatible
+          let cleanedArray = eps1Match[1]
+            .replace(/'/g, '"')
+            .replace(/,\s*\]/g, ']')
+            .replace(/,\s*,/g, ',')
+            .replace(/\n/g, '')
+            .replace(/\r/g, '');
+          
+          const eps1Data = JSON.parse(cleanedArray);
           eps1Data.forEach((url: string, index: number) => {
-            if (url && url.trim()) {
+            if (url && url.trim() && url !== '') {
+              // Pour One Piece saga 11, ajuster la numérotation des épisodes
+              let realEpisodeNumber = index + 1;
+              if (seasonPath === 'saison11/vf' || seasonPath === 'saison11/vostfr') {
+                realEpisodeNumber = 1087 + index; // Episodes 1087-1093 pour saga 11
+              }
+              
               realEpisodes.push({
-                episodeNumber: index + 1,
+                episodeNumber: realEpisodeNumber,
                 server: 'eps1',
                 url: url,
                 authentic: true
@@ -220,9 +270,14 @@ export class RealAnimeSamaScraper {
       
       if (eps2Match) {
         try {
-          const eps2Data = JSON.parse(eps2Match[1]);
+          let cleanedArray = eps2Match[1]
+            .replace(/'/g, '"')
+            .replace(/,\s*\]/g, ']')
+            .replace(/,\s*,/g, ',');
+          
+          const eps2Data = JSON.parse(cleanedArray);
           eps2Data.forEach((url: string, index: number) => {
-            if (url && url.trim()) {
+            if (url && url.trim() && url !== '') {
               const existingEpisode = realEpisodes.find(ep => ep.episodeNumber === index + 1);
               if (existingEpisode) {
                 existingEpisode.alternativeServers = existingEpisode.alternativeServers || [];
@@ -240,9 +295,14 @@ export class RealAnimeSamaScraper {
       
       if (eps3Match) {
         try {
-          const eps3Data = JSON.parse(eps3Match[1]);
+          let cleanedArray = eps3Match[1]
+            .replace(/'/g, '"')
+            .replace(/,\s*\]/g, ']')
+            .replace(/,\s*,/g, ',');
+          
+          const eps3Data = JSON.parse(cleanedArray);
           eps3Data.forEach((url: string, index: number) => {
-            if (url && url.trim()) {
+            if (url && url.trim() && url !== '') {
               const existingEpisode = realEpisodes.find(ep => ep.episodeNumber === index + 1);
               if (existingEpisode) {
                 existingEpisode.alternativeServers = existingEpisode.alternativeServers || [];
