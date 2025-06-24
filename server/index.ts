@@ -102,21 +102,21 @@ const server = createServer(async (req, res) => {
 
     // Router pour les différentes endpoints avec gestion d'erreurs
     if (pathname === '/api/health') {
-      const { default: handler } = await import('../api/health.js');
+      const { default: handler } = await import('../api/health.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler health:', error);
         throw error;
       });
     } 
     else if (pathname === '/api/status') {
-      const { default: handler } = await import('../api/status.js');
+      const { default: handler } = await import('../api/status.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler status:', error);
         throw error;
       });
     }
     else if (pathname === '/api/search') {
-      const { default: handler } = await import('../api/search.js');
+      const { default: handler } = await import('../api/search.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler search:', error);
         throw error;
@@ -125,7 +125,7 @@ const server = createServer(async (req, res) => {
     else if (pathname.startsWith('/api/anime/')) {
       const id = pathname.split('/')[3];
       vercelReq.query = { ...vercelReq.query, id };
-      const { default: handler } = await import('../api/anime/[id].js');
+      const { default: handler } = await import('../api/anime/[id].ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler anime:', error);
         throw error;
@@ -134,7 +134,7 @@ const server = createServer(async (req, res) => {
     else if (pathname.startsWith('/api/episode/')) {
       const id = pathname.split('/')[3];
       vercelReq.query = { ...vercelReq.query, id };
-      const { default: handler } = await import('../api/episode/[id].js');
+      const { default: handler } = await import('../api/episode/[id].ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler episode:', error);
         throw error;
@@ -143,7 +143,7 @@ const server = createServer(async (req, res) => {
     else if (pathname.startsWith('/api/embed/')) {
       const episodeId = pathname.split('/')[3];
       vercelReq.query = { ...vercelReq.query, episodeId };
-      const { default: handler } = await import('../api/embed/[episodeId].js');
+      const { default: handler } = await import('../api/embed/[episodeId].ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler embed:', error);
         throw error;
@@ -152,63 +152,63 @@ const server = createServer(async (req, res) => {
     else if (pathname.startsWith('/api/proxy/')) {
       const url = pathname.split('/api/proxy/')[1];
       vercelReq.query = { ...vercelReq.query, url };
-      const { default: handler } = await import('../api/proxy/[url].js');
+      const { default: handler } = await import('../api/proxy/[url].ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler proxy:', error);
         throw error;
       });
     }
     else if (pathname === '/api/trending') {
-      const { default: handler } = await import('../api/trending.js');
+      const { default: handler } = await import('../api/trending.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler trending:', error);
         throw error;
       });
     }
     else if (pathname === '/api/catalogue') {
-      const { default: handler } = await import('../api/catalogue.js');
+      const { default: handler } = await import('../api/catalogue.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler catalogue:', error);
         throw error;
       });
     }
     else if (pathname === '/api/genres') {
-      const { default: handler } = await import('../api/genres.js');
+      const { default: handler } = await import('../api/genres.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler genres:', error);
         throw error;
       });
     }
     else if (pathname === '/api/random') {
-      const { default: handler } = await import('../api/random.js');
+      const { default: handler } = await import('../api/random.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler random:', error);
         throw error;
       });
     }
     else if (pathname === '/api/advanced-search') {
-      const { default: handler } = await import('../api/advanced-search.js');
+      const { default: handler } = await import('../api/advanced-search.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler advanced-search:', error);
         throw error;
       });
     }
     else if (pathname === '/api/seasons') {
-      const { default: handler } = await import('../api/seasons.js');
+      const { default: handler } = await import('../api/seasons.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler seasons:', error);
         throw error;
       });
     }
     else if (pathname === '/api/content') {
-      const { default: handler } = await import('../api/content.js');
+      const { default: handler } = await import('../api/content.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler content:', error);
         throw error;
       });
     }
     else if (pathname === '/api/content-types') {
-      const { default: handler } = await import('../api/content-types.js');
+      const { default: handler } = await import('../api/content-types.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler content-types:', error);
         throw error;
@@ -216,7 +216,7 @@ const server = createServer(async (req, res) => {
     }
 
     else if (pathname === '/' || pathname === '/api') {
-      const { default: handler } = await import('../api/index.js');
+      const { default: handler } = await import('../api/index.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler index:', error);
         throw error;
