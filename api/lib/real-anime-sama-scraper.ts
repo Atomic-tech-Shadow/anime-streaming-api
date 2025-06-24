@@ -149,10 +149,15 @@ export class RealAnimeSamaScraper {
             const seasonName = parts[1];
             const seasonPath = parts[2];
             
+            // Ignorer les paths invalides comme "url"
+            if (seasonPath === 'url' || seasonPath === 'nom' || seasonPath.length < 3) {
+              return; // Skip invalid paths
+            }
+            
             // Extraction du numéro de saison depuis le path et le nom
             let seasonNumber = index + 1;
             const sagaMatch = seasonPath.match(/saga(\d+)/i) || seasonPath.match(/saison(\d+)/i);
-            const nameMatch = seasonName.match(/Saga\s+(\d+)/i);
+            const nameMatch = seasonName.match(/Saga\s+(\d+)/i) || seasonName.match(/Saison\s+(\d+)/i);
             
             if (sagaMatch) {
               seasonNumber = parseInt(sagaMatch[1]);
