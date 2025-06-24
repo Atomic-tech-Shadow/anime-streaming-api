@@ -198,13 +198,21 @@ async function generateSeasonEpisodes(
 }
 
 function getEpisodeRangesForAnime(animeId: string, totalEpisodes: number, seasonCount: number): Array<{start: number, end: number}> {
-  // Configuration spéciale My Hero Academia avec nombres d'épisodes réels
-  if (animeId === 'my-hero-academia') {
-    const mhaEpisodeCounts = [13, 25, 25, 25, 25, 25, 21]; // Saisons 1-7
+  // Configurations spéciales pour animes avec structures connues
+  const knownAnimeConfigs: Record<string, number[]> = {
+    'my-hero-academia': [13, 25, 25, 25, 25, 25, 21], // Saisons 1-7
+    'demon-slayer': [26, 11, 11, 8], // Saisons 1-4 
+    'attack-on-titan': [25, 12, 22, 16], // Saisons 1-4
+    'jujutsu-kaisen': [24, 24], // Saisons 1-2
+    'chainsaw-man': [12], // Saison 1
+  };
+  
+  if (knownAnimeConfigs[animeId]) {
+    const episodeCounts = knownAnimeConfigs[animeId];
     const ranges = [];
     let currentStart = 1;
     
-    for (const episodeCount of mhaEpisodeCounts) {
+    for (const episodeCount of episodeCounts) {
       if (episodeCount > 0) {
         ranges.push({ start: currentStart, end: currentStart + episodeCount - 1 });
         currentStart += episodeCount;
@@ -241,7 +249,7 @@ function getEpisodeRangesForAnime(animeId: string, totalEpisodes: number, season
   let bestSeasonLength = 25;
   
   for (const length of commonSeasonLengths) {
-    if (totalEpisodes % length === 0 || totalEpisodes % length < 5) {
+    if (totalEpisodes % length === 0 || Math.abs(totalEpisodes % length) < 5) {
       bestSeasonLength = length;
       break;
     }
@@ -284,31 +292,28 @@ async function generateFilms(animeId: string, language: 'VF' | 'VOSTFR'): Promis
 }
 
 /**
- * Calcule le nombre total d'épisodes pour My Hero Academia spécifiquement
+ * Système universel pour calculer le nombre total d'épisodes
  */
 async function calculateTotalEpisodesFromAllSeasons(animeId: string, animeDetails: any): Promise<number> {
-  // Configuration spéciale pour My Hero Academia
-  if (animeId === 'my-hero-academia') {
-    // Données réelles des saisons MHA
-    const mhaEpisodeCounts = [
-      13, // Saison 1: 13 épisodes
-      25, // Saison 2: 25 épisodes  
-      25, // Saison 3: 25 épisodes
-      25, // Saison 4: 25 épisodes
-      25, // Saison 5: 25 épisodes
-      25, // Saison 6: 25 épisodes
-      21, // Saison 7: 21 épisodes (confirmé)
-      0   // Films
-    ];
-    
-    const totalEpisodes = mhaEpisodeCounts.reduce((sum, count) => sum + count, 0);
-    console.log(`📊 My Hero Academia: ${totalEpisodes} total episodes across ${mhaEpisodeCounts.length - 1} seasons`);
+  // Configuration spéciale pour animes avec structures connues
+  const knownAnimeConfigs: Record<string, number[]> = {
+    'my-hero-academia': [13, 25, 25, 25, 25, 25, 21], // Saisons 1-7
+    'demon-slayer': [26, 11, 11, 8], // Saisons 1-4 
+    'attack-on-titan': [25, 12, 22, 16], // Saisons 1-4
+    'jujutsu-kaisen': [24, 24], // Saisons 1-2
+    'chainsaw-man': [12], // Saison 1
+  };
+  
+  if (knownAnimeConfigs[animeId]) {
+    const episodeCounts = knownAnimeConfigs[animeId];
+    const totalEpisodes = episodeCounts.reduce((sum, count) => sum + count, 0);
+    console.log(`📊 ${animeId}: ${totalEpisodes} total episodes across ${episodeCounts.length} seasons (known config)`);
     return totalEpisodes;
   }
   
   let totalEpisodes = 0;
   
-  // Pour les autres animes, analyser chaque saison
+  // Pour les autres animes, analyser chaque saison automatiquement
   if (animeDetails.seasons && animeDetails.seasons.length > 0) {
     for (const season of animeDetails.seasons) {
       if (season.number !== 999) { // Exclure les films
@@ -317,6 +322,12 @@ async function calculateTotalEpisodesFromAllSeasons(animeId: string, animeDetail
         console.log(`📊 Season ${season.number}: ${seasonEpisodeCount} episodes`);
       }
     }
+  }
+  
+  // Si aucun épisode détecté, utiliser un système de fallback intelligent
+  if (totalEpisodes === 0 && animeDetails.progressInfo?.totalEpisodes) {
+    totalEpisodes = animeDetails.progressInfo.totalEpisodes;
+    console.log(`📊 Using progressInfo fallback: ${totalEpisodes} episodes for ${animeId}`);
   }
   
   console.log(`📊 Total episodes calculated: ${totalEpisodes} for ${animeId}`);
