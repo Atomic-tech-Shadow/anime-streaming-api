@@ -73,15 +73,41 @@ export class AuthenticAnimeSamaScraper {
         { id: 'bleach', title: 'Bleach' },
         { id: 'my-hero-academia', title: 'My Hero Academia' },
         { id: 'hunter-x-hunter', title: 'Hunter x Hunter' },
-        { id: 'fairy-tail', title: 'Fairy Tail' }
+        { id: 'fairy-tail', title: 'Fairy Tail' },
+        { id: 'tokyo-ghoul', title: 'Tokyo Ghoul' },
+        { id: 'death-note', title: 'Death Note' },
+        { id: 'fullmetal-alchemist', title: 'Fullmetal Alchemist' },
+        { id: 'mob-psycho-100', title: 'Mob Psycho 100' },
+        { id: 'chainsaw-man', title: 'Chainsaw Man' },
+        { id: 'spy-x-family', title: 'Spy x Family' },
+        { id: 'solo-leveling', title: 'Solo Leveling' },
+        { id: 'black-clover', title: 'Black Clover' },
+        { id: 'dr-stone', title: 'Dr. Stone' },
+        { id: 'vinland-saga', title: 'Vinland Saga' },
+        { id: 'code-geass', title: 'Code Geass' },
+        { id: 'overlord', title: 'Overlord' },
+        { id: 'boruto', title: 'Boruto' },
+        { id: 'pokemon', title: 'Pokémon' },
+        { id: 'yu-gi-oh', title: 'Yu-Gi-Oh!' }
       ];
       
-      // Recherche exacte ou partielle
-      const results = popularAnimes.filter(anime => 
-        anime.id.includes(directId) || 
-        anime.title.toLowerCase().includes(query.toLowerCase()) ||
-        directId.includes(anime.id.split('-')[0])
-      );
+      // Recherche améliorée avec correspondances multiples
+      const results = popularAnimes.filter(anime => {
+        const queryLower = query.toLowerCase();
+        const titleLower = anime.title.toLowerCase();
+        const animeWords = anime.id.split('-');
+        const queryWords = directId.split('-');
+        
+        return (
+          anime.id === directId || // Correspondance exacte ID
+          anime.id.includes(directId) || // ID contient la recherche
+          titleLower.includes(queryLower) || // Titre contient la recherche
+          queryLower.includes(titleLower) || // Recherche contient le titre
+          animeWords.some(word => queryWords.includes(word)) || // Mots communs
+          queryWords.some(word => animeWords.includes(word)) || // Mots communs inversés
+          titleLower.replace(/[^a-z0-9]/g, '').includes(queryLower.replace(/[^a-z0-9]/g, '')) // Sans espaces/caractères spéciaux
+        );
+      });
       
       if (results.length > 0) {
         return results.map(anime => ({
