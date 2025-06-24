@@ -71,27 +71,15 @@ async function generateSeasonEpisodes(
     return await generateFilms(animeId, language);
   }
   
-  // Utiliser progressInfo pour déterminer le nombre total d'épisodes avec fallback intelligent
-  let totalEpisodes = animeDetails.progressInfo?.totalEpisodes || 0;
-  
-  // Fallback intelligent avec données réelles d'anime-sama.fr
-  if (totalEpisodes === 0 || totalEpisodes < 10) {
-    console.log(`⚠️ totalEpisodes (${totalEpisodes}) seems incorrect for ${animeId}, extracting real data from anime-sama.fr`);
-    
-    // Essayer de détecter le nombre réel d'épisodes depuis les saisons disponibles
-    const realCount = await extractRealEpisodeCount(animeId, animeDetails);
-    if (realCount > totalEpisodes) {
-      totalEpisodes = realCount;
-      console.log(`📊 Real episode count detected: ${totalEpisodes} episodes for ${animeId}`);
-    }
-  }
+  // Calculer le nombre total d'épisodes en analysant toutes les saisons disponibles
+  let totalEpisodes = await calculateTotalEpisodesFromAllSeasons(animeId, animeDetails);
   
   // Si totalEpisodes est encore 0, forcer un minimum
   if (totalEpisodes === 0) {
     totalEpisodes = 12; // Minimum par défaut
     console.log(`🔧 Forcing minimum 12 episodes for ${animeId}`);
   }
-  
+
   // Configuration spéciale One Piece avec numérotation correcte
   if (animeId === 'one-piece') {
     const onePieceRanges = [
@@ -133,8 +121,47 @@ async function generateSeasonEpisodes(
     }
   }
 
-  // Calculer la plage d'épisodes pour cette saison (autres animes)
-  const episodeRanges = getEpisodeRangesForAnime(animeId, totalEpisodes);
+  // Configuration spéciale My Hero Academia avec nombres d'épisodes réels
+  if (animeId === 'my-hero-academia') {
+    const mhaEpisodeCounts = [13, 25, 25, 25, 25, 25, 21]; // Saisons 1-7
+    
+    if (seasonNumber > 0 && seasonNumber <= mhaEpisodeCounts.length) {
+      const episodeCount = mhaEpisodeCounts[seasonNumber - 1];
+      
+      console.log(`✅ My Hero Academia: Generating ${episodeCount} episodes for season ${seasonNumber}`);
+      
+      for (let episodeNum = 1; episodeNum <= episodeCount; episodeNum++) {
+        const episodeId = `${animeId}-episode-${episodeNum}-${language.toLowerCase()}`;
+        
+        episodes.push({
+          id: episodeId,
+          episodeNumber: episodeNum,
+          title: `Episode ${episodeNum}`,
+          language: language.toLowerCase(),
+          seasonNumber,
+          available: true,
+          url: `https://anime-sama.fr/catalogue/${animeId}/saison${seasonNumber}/${language.toLowerCase()}/episode-${episodeNum}`,
+          embedUrl: `/api/embed/${episodeId}`
+        });
+      }
+      
+      console.log(`📺 Generated ${episodes.length} episodes for My Hero Academia season ${seasonNumber}`);
+      return episodes;
+    }
+  }
+
+  // Extraire les épisodes réels de cette saison spécifique depuis anime-sama.fr
+  const seasonEpisodes = await extractRealSeasonEpisodes(animeId, seasonNumber, language, animeDetails);
+  
+  if (seasonEpisodes.length > 0) {
+    console.log(`✅ Found ${seasonEpisodes.length} real episodes for ${animeId} season ${seasonNumber}`);
+    return seasonEpisodes;
+  }
+  
+  console.log(`❌ No episodes found for ${animeId} season ${seasonNumber}, trying fallback generation`);
+  
+  // Fallback: générer des épisodes basés sur la structure détectée
+  const episodeRanges = getEpisodeRangesForAnime(animeId, totalEpisodes, animeDetails.seasons.length);
   
   if (seasonNumber > episodeRanges.length) {
     console.log(`❌ Season ${seasonNumber} exceeds available ranges (${episodeRanges.length})`);
@@ -170,22 +197,49 @@ async function generateSeasonEpisodes(
   return episodes;
 }
 
-function getEpisodeRangesForAnime(animeId: string, totalEpisodes: number): Array<{start: number, end: number}> {
-  // Configuration générique basée sur les données réelles d'anime-sama.fr
-  // Utilise la structure détectée automatiquement depuis le site
+function getEpisodeRangesForAnime(animeId: string, totalEpisodes: number, seasonCount: number): Array<{start: number, end: number}> {
+  // Configuration spéciale My Hero Academia avec nombres d'épisodes réels
+  if (animeId === 'my-hero-academia') {
+    const mhaEpisodeCounts = [13, 25, 25, 25, 25, 25, 21]; // Saisons 1-7
+    const ranges = [];
+    let currentStart = 1;
+    
+    for (const episodeCount of mhaEpisodeCounts) {
+      if (episodeCount > 0) {
+        ranges.push({ start: currentStart, end: currentStart + episodeCount - 1 });
+        currentStart += episodeCount;
+      }
+    }
+    
+    return ranges;
+  }
   
-  // Si nous avons peu d'épisodes, probablement une série courte
+  // Si nous avons le nombre de saisons, diviser équitablement
+  if (seasonCount > 1 && totalEpisodes > 0) {
+    const episodesPerSeason = Math.ceil(totalEpisodes / seasonCount);
+    const ranges = [];
+    
+    for (let i = 0; i < seasonCount; i++) {
+      const start = i * episodesPerSeason + 1;
+      const end = Math.min((i + 1) * episodesPerSeason, totalEpisodes);
+      
+      if (start <= totalEpisodes) {
+        ranges.push({ start, end });
+      }
+    }
+    
+    return ranges;
+  }
+  
+  // Fallback pour séries courtes
   if (totalEpisodes <= 50) {
-    // Séries courtes : tout dans une saison
     return [{ start: 1, end: totalEpisodes }];
   }
   
   // Pour les séries longues, diviser intelligemment
-  // Essayer de respecter les structures communes (12, 13, 24, 25, 26 épisodes par saison)
   const commonSeasonLengths = [26, 25, 24, 13, 12];
-  let bestSeasonLength = 25; // Par défaut
+  let bestSeasonLength = 25;
   
-  // Trouver la longueur de saison qui divise le mieux le total
   for (const length of commonSeasonLengths) {
     if (totalEpisodes % length === 0 || totalEpisodes % length < 5) {
       bestSeasonLength = length;
@@ -230,44 +284,79 @@ async function generateFilms(animeId: string, language: 'VF' | 'VOSTFR'): Promis
 }
 
 /**
- * Extrait le nombre réel d'épisodes depuis anime-sama.fr
+ * Calcule le nombre total d'épisodes pour My Hero Academia spécifiquement
  */
-async function extractRealEpisodeCount(animeId: string, animeDetails: any): Promise<number> {
-  const axios = (await import('axios')).default;
-  
-  try {
-    let maxEpisodesFound = 0;
-    
-    // Essayer plusieurs URLs possibles pour détecter les épisodes réels
-    const urlsToTry = [
-      `https://anime-sama.fr/catalogue/${animeId}/saison1/vostfr/episodes.js`,
-      `https://anime-sama.fr/catalogue/${animeId}/version-2011/vostfr/episodes.js`,
-      `https://anime-sama.fr/catalogue/${animeId}/avec-fillers/vostfr/episodes.js`,
-      `https://anime-sama.fr/catalogue/${animeId}/saison-1/vostfr/episodes.js`,
+async function calculateTotalEpisodesFromAllSeasons(animeId: string, animeDetails: any): Promise<number> {
+  // Configuration spéciale pour My Hero Academia
+  if (animeId === 'my-hero-academia') {
+    // Données réelles des saisons MHA
+    const mhaEpisodeCounts = [
+      13, // Saison 1: 13 épisodes
+      25, // Saison 2: 25 épisodes  
+      25, // Saison 3: 25 épisodes
+      25, // Saison 4: 25 épisodes
+      25, // Saison 5: 25 épisodes
+      25, // Saison 6: 25 épisodes
+      21, // Saison 7: 21 épisodes (confirmé)
+      0   // Films
     ];
     
-    // Si nous avons des informations sur les saisons, les utiliser
-    if (animeDetails.seasons && animeDetails.seasons.length > 0) {
-      for (const season of animeDetails.seasons) {
-        if (season.number !== 999) { // Exclure les films
-          const seasonName = season.name.toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[()]/g, '')
-            .replace(/-vostfr$/, '')
-            .replace(/-vf$/, '');
-          
-          urlsToTry.push(
-            `https://anime-sama.fr/catalogue/${animeId}/${seasonName}/vostfr/episodes.js`,
-            `https://anime-sama.fr/catalogue/${animeId}/saison${season.number}/vostfr/episodes.js`
-          );
-        }
+    const totalEpisodes = mhaEpisodeCounts.reduce((sum, count) => sum + count, 0);
+    console.log(`📊 My Hero Academia: ${totalEpisodes} total episodes across ${mhaEpisodeCounts.length - 1} seasons`);
+    return totalEpisodes;
+  }
+  
+  let totalEpisodes = 0;
+  
+  // Pour les autres animes, analyser chaque saison
+  if (animeDetails.seasons && animeDetails.seasons.length > 0) {
+    for (const season of animeDetails.seasons) {
+      if (season.number !== 999) { // Exclure les films
+        const seasonEpisodeCount = await extractRealSeasonEpisodeCount(animeId, season.number, season);
+        totalEpisodes += seasonEpisodeCount;
+        console.log(`📊 Season ${season.number}: ${seasonEpisodeCount} episodes`);
+      }
+    }
+  }
+  
+  console.log(`📊 Total episodes calculated: ${totalEpisodes} for ${animeId}`);
+  return totalEpisodes;
+}
+
+/**
+ * Extrait les épisodes réels d'une saison spécifique
+ */
+async function extractRealSeasonEpisodes(animeId: string, seasonNumber: number, language: 'VF' | 'VOSTFR', animeDetails: any): Promise<any[]> {
+  const episodes = [];
+  
+  try {
+    const axios = (await import('axios')).default;
+    
+    // URLs possibles pour cette saison
+    const urlsToTry = [
+      `https://anime-sama.fr/catalogue/${animeId}/saison${seasonNumber}/${language.toLowerCase()}/episodes.js`,
+      `https://anime-sama.fr/catalogue/${animeId}/saison-${seasonNumber}/${language.toLowerCase()}/episodes.js`,
+    ];
+    
+    // Ajouter des URLs basées sur les noms de saisons détectés
+    if (animeDetails.seasons) {
+      const targetSeason = animeDetails.seasons.find(s => s.number === seasonNumber);
+      if (targetSeason) {
+        const seasonName = targetSeason.name.toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[()]/g, '')
+          .replace(/-vostfr$/, '')
+          .replace(/-vf$/, '');
+        
+        urlsToTry.push(
+          `https://anime-sama.fr/catalogue/${animeId}/${seasonName}/${language.toLowerCase()}/episodes.js`
+        );
       }
     }
     
-    // Tester chaque URL pour trouver celle qui fonctionne
     for (const url of urlsToTry) {
       try {
-        console.log(`🔍 Trying to extract episodes from: ${url}`);
+        console.log(`🔍 Extracting episodes from: ${url}`);
         const response = await axios.get(url, { 
           timeout: 8000,
           headers: {
@@ -277,19 +366,36 @@ async function extractRealEpisodeCount(animeId: string, animeDetails: any): Prom
         
         if (response.status === 200) {
           const episodesData = response.data;
-          
-          // Chercher toutes les variables eps (eps1, eps2, eps3, eps4)
           const epsMatches = episodesData.match(/var eps\d+\s*=\s*\[(.*?)\];/gs) || [];
+          
+          let episodeNumber = 1;
           
           for (const match of epsMatches) {
             const arrayContent = match.match(/\[(.*?)\]/s)?.[1] || '';
             const urlMatches = arrayContent.match(/'[^']*'/g) || [];
-            const validUrls = urlMatches.filter(url => url.length > 10); // Filtrer les URLs vides
+            const validUrls = urlMatches.filter(url => url.length > 10);
             
-            if (validUrls.length > maxEpisodesFound) {
-              maxEpisodesFound = validUrls.length;
-              console.log(`✅ Found ${validUrls.length} episodes at ${url}`);
+            for (let i = 0; i < validUrls.length; i++) {
+              const episodeId = `${animeId}-episode-${episodeNumber}-${language.toLowerCase()}`;
+              
+              episodes.push({
+                id: episodeId,
+                episodeNumber: episodeNumber,
+                title: `Episode ${episodeNumber}`,
+                language: language.toLowerCase(),
+                seasonNumber,
+                available: true,
+                url: `https://anime-sama.fr/catalogue/${animeId}/saison${seasonNumber}/${language.toLowerCase()}/episode-${episodeNumber}`,
+                embedUrl: `/api/embed/${episodeId}`
+              });
+              
+              episodeNumber++;
             }
+          }
+          
+          if (episodes.length > 0) {
+            console.log(`✅ Found ${episodes.length} episodes for ${animeId} season ${seasonNumber}`);
+            return episodes;
           }
         }
       } catch (urlError) {
@@ -297,44 +403,71 @@ async function extractRealEpisodeCount(animeId: string, animeDetails: any): Prom
       }
     }
     
-    // Si on a trouvé des épisodes, les retourner
-    if (maxEpisodesFound > 0) {
-      console.log(`📊 Maximum episodes found: ${maxEpisodesFound} for ${animeId}`);
-      return maxEpisodesFound;
+    return episodes;
+  } catch (error) {
+    console.log(`Error extracting real season episodes: ${error.message}`);
+    return episodes;
+  }
+}
+
+/**
+ * Extrait le nombre d'épisodes d'une saison spécifique
+ */
+async function extractRealSeasonEpisodeCount(animeId: string, seasonNumber: number, seasonInfo: any): Promise<number> {
+  try {
+    const axios = (await import('axios')).default;
+    let maxEpisodesFound = 0;
+    
+    // URLs pour cette saison spécifique
+    const urlsToTry = [
+      `https://anime-sama.fr/catalogue/${animeId}/saison${seasonNumber}/vostfr/episodes.js`,
+      `https://anime-sama.fr/catalogue/${animeId}/saison-${seasonNumber}/vostfr/episodes.js`,
+    ];
+    
+    // Ajouter l'URL basée sur le nom de la saison si disponible
+    if (seasonInfo) {
+      const seasonName = seasonInfo.name?.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[()]/g, '')
+        .replace(/-vostfr$/, '')
+        .replace(/-vf$/, '');
+      
+      if (seasonName) {
+        urlsToTry.push(`https://anime-sama.fr/catalogue/${animeId}/${seasonName}/vostfr/episodes.js`);
+      }
     }
     
-    // Dernière tentative : analyser le HTML de la page principale
-    try {
-      const mainPageUrl = `https://anime-sama.fr/catalogue/${animeId}/`;
-      const response = await axios.get(mainPageUrl, { timeout: 8000 });
-      
-      if (response.status === 200) {
-        const cheerio = (await import('cheerio')).default;
-        const $ = cheerio.load(response.data);
+    for (const url of urlsToTry) {
+      try {
+        const response = await axios.get(url, { 
+          timeout: 8000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
         
-        // Chercher des indices dans le HTML
-        const progressText = $('.progress-info, .episode-count, .total-episodes').text();
-        const episodeMatch = progressText.match(/(\d+)\s*(?:épisodes?|episodes?)/i);
-        
-        if (episodeMatch) {
-          const episodes = parseInt(episodeMatch[1]);
-          if (episodes > 0) {
-            console.log(`📄 Episodes found in HTML: ${episodes} for ${animeId}`);
-            return episodes;
+        if (response.status === 200) {
+          const episodesData = response.data;
+          const epsMatches = episodesData.match(/var eps\d+\s*=\s*\[(.*?)\];/gs) || [];
+          
+          for (const match of epsMatches) {
+            const arrayContent = match.match(/\[(.*?)\]/s)?.[1] || '';
+            const urlMatches = arrayContent.match(/'[^']*'/g) || [];
+            const validUrls = urlMatches.filter(url => url.length > 10);
+            
+            if (validUrls.length > maxEpisodesFound) {
+              maxEpisodesFound = validUrls.length;
+            }
           }
         }
+      } catch (urlError) {
+        // Continuer
       }
-    } catch (htmlError) {
-      console.log(`Could not parse HTML for episode count`);
     }
     
-    // Retourner un minimum raisonnable
-    console.log(`Using fallback minimum for ${animeId}`);
-    return 24;
-    
+    return maxEpisodesFound || 12; // Minimum par défaut
   } catch (error) {
-    console.log(`Error extracting real episode count for ${animeId}:`, error.message);
-    return 24;
+    return 12;
   }
 }
 

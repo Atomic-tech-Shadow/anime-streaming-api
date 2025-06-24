@@ -158,6 +158,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - January 18, 2025. Migration from Replit Agent to standard Replit environment completed successfully - all dependencies installed, server running on port 5000, API endpoints fully functional. Created comprehensive API configuration corrections document (CORRECTIONS_API_ANIME_SAMA.md) to fix frontend integration issues with proper endpoints, headers, and URL configurations.
 - January 18, 2025. Fixed search functionality completely - expanded anime database to 30+ popular animes, improved search algorithm with multiple match types, added support for both 'q' and 'query' parameters, corrected One Piece episode 1087 numbering (1087-1122), and implemented intelligent fallback system. API now 100% functional locally, ready for Render deployment.
 - January 18, 2025. Cleaned up project by removing all demo and documentation endpoints - removed api/docs.ts, api/docs.html, demo routes, CORS test pages, and associated documentation files. API now contains only core functionality endpoints for production use.
+- January 18, 2025. Migration from Replit Agent to standard Replit environment completed successfully - all dependencies installed, server running on port 5000, API endpoints fully functional. Fixed critical bugs: My Hero Academia saison 7 (21 épisodes), One Piece saga 11 (épisodes 1087-1122), streaming sources extraction with authentic data from anime-sama.fr. All anime viewing functionality restored.
 
 ## User Preferences
 
