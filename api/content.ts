@@ -78,22 +78,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error) {
     console.error('Content error:', error);
-    
-    // Fallback ultime avec contenu minimal
-    const fallbackContent = generateFallbackContent(
-      req.query.animeId as string || 'unknown',
-      req.query.type as string || 'films',
-      req.query.language as 'VF' | 'VOSTFR' || 'VOSTFR'
-    );
-    
-    return sendSuccess(res, {
+    return sendError(res, 404, 'Content not found on anime-sama.fr', {
       animeId: req.query.animeId,
       type: req.query.type,
-      language: req.query.language || 'VOSTFR',
-      content: fallbackContent,
-      totalItems: fallbackContent.length,
-      source: 'fallback',
-      warning: 'Content generated from fallback due to scraping issues'
+      language: req.query.language,
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }
@@ -302,7 +291,7 @@ function getSpecialsDatabase(): Record<string, any[]> {
   };
 }
 
+// Supprimé: plus de contenu de démonstration généré
 function generateFallbackContent(animeId: string, type: string, language: 'VF' | 'VOSTFR'): any[] {
-  console.log(`Generating fallback content for ${animeId} - ${type} - ${language}`);
-  return [];
+  return []; // Retourner tableau vide au lieu de contenu synthétique
 }

@@ -349,16 +349,8 @@ export class AnimeSamaNavigator {
       }
       
       if (!workingUrl) {
-        // If no direct URL works, add some mock sources for demonstration
-        console.log('⚠️ URLs non accessibles, génération de sources de démonstration');
-        sources.push({
-          url: `https://anime-sama.fr/streaming/${animeId}/episode-${episodeNumber}`,
-          server: 'Serveur Principal',
-          quality: 'HD',
-          language: language.toUpperCase() as 'VF' | 'VOSTFR',
-          type: 'iframe',
-          serverIndex: 1
-        });
+        console.log('❌ Aucune URL accessible pour cet épisode');
+        throw new Error(`Episode ${episodeId} not found on anime-sama.fr`);
       } else {
           // Try to extract episodes.js if the page loaded successfully
           const episodesJsMatch = cleanedData.match(/episodes\.js\?filever=(\d+)/);
@@ -452,31 +444,14 @@ export class AnimeSamaNavigator {
                 }
               }
               
-              // Si aucune source extraite, ajouter des sources de démonstration basées sur les patterns réels
+              // Si aucune source extraite, l'épisode n'existe pas
               if (sources.length === 0) {
-                console.log('⚠️ Ajout de sources de démonstration');
-                sources.push(
-                  {
-                    url: `https://anime-sama.fr/catalogue/${animeId}/saison1/${language.toLowerCase()}/episode-${episodeNumber}`,
-                    server: 'Serveur Principal',
-                    quality: 'HD',
-                    language: language.toUpperCase() as 'VF' | 'VOSTFR',
-                    type: 'iframe',
-                    serverIndex: 1
-                  },
-                  {
-                    url: `https://streaming.anime-sama.fr/${animeId}/${episodeNumber}/${language.toLowerCase()}`,
-                    server: 'Serveur Alternatif',
-                    quality: 'FHD',
-                    language: language.toUpperCase() as 'VF' | 'VOSTFR',
-                    type: 'direct',
-                    serverIndex: 2
-                  }
-                );
+                console.log('❌ Aucune source vidéo trouvée dans episodes.js');
+                throw new Error(`No streaming sources found for episode ${episodeNumber} of ${animeId}`);
               }
             } catch (jsError) {
               console.error('Erreur episodes.js:', jsError);
-              // Ne pas propager l'erreur, continuer avec les sources de démonstration
+              throw new Error(`Failed to parse episodes.js for ${animeId}: ${jsError.message}`);
             }
           }
         }
@@ -496,18 +471,7 @@ export class AnimeSamaNavigator {
         
       } catch (error) {
         console.error(`Erreur épisode ${episodeId}:`, error);
-        
-        // Return basic structure with no sources found message
-        return {
-          id: episodeId,
-          title: `Épisode ${episodeNumber}`,
-          animeTitle: animeId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-          episodeNumber: parseInt(episodeNumber),
-          language: language.toUpperCase() as 'VF' | 'VOSTFR',
-          sources: [],
-          availableServers: [],
-          url: `${this.baseUrl}/catalogue/${animeId}/`
-        };
+        throw error;
       }
   }
 
