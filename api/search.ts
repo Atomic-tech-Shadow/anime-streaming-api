@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess } from './lib/core';
 import { realAnimeSamaScraper } from './lib/real-anime-sama-scraper';
+import { transformSearchResultForFrontend } from './lib/universal-helpers';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -31,16 +32,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Recherche UNIQUEMENT dans les données authentiques d'anime-sama.fr
     const rawResults = await realAnimeSamaScraper.searchRealAnimes(searchQuery);
 
-    // Transformer les résultats pour le frontend
-    const searchResults = rawResults.map((anime: any) => ({
-      id: anime.id,
-      title: anime.title,
-      url: anime.url,
-      type: 'anime',
-      status: 'En cours',
-      image: `https://via.placeholder.com/300x400/1a1a2e/ffffff?text=${encodeURIComponent(anime.title)}`,
-      authentic: true
-    }));
+    // Transformer les résultats pour le frontend de manière universelle
+    const searchResults = rawResults.map((anime: any) => transformSearchResultForFrontend(anime));
 
     return sendSuccess(res, searchResults, {
       query: searchQuery,

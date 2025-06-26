@@ -13,6 +13,7 @@ import {
   BASE_URL
 } from './lib/core';
 import { realAnimeSamaScraper } from './lib/real-anime-sama-scraper';
+import { transformTrendingForFrontend } from './lib/universal-helpers';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -46,17 +47,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Utiliser le catalogue réel comme source de trending
     const realCatalogue = await realAnimeSamaScraper.getReallCatalogueAnimes();
     
-    // Transformer les données pour le frontend
-    const trendingResults = realCatalogue.slice(0, 20).map((anime: any, index: number) => ({
-      id: anime.id,
-      title: anime.title,
-      url: anime.url,
-      type: 'anime',
-      status: 'En cours',
-      image: `https://via.placeholder.com/300x400/1a1a2e/ffffff?text=${encodeURIComponent(anime.title)}`,
-      rank: index + 1,
-      authentic: true
-    }));
+    // Transformer les données pour le frontend de manière universelle
+    const trendingResults = realCatalogue.slice(0, 20).map((anime: any, index: number) => 
+      transformTrendingForFrontend(anime, index)
+    );
     
     setCache(cacheKey, trendingResults);
     
