@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess } from '../lib/core';
-import { realAnimeSamaScraper } from '../lib/real-anime-sama-scraper';
+import { authenticCatalogueScraper } from '../lib/authentic-catalogue-scraper';
 import { transformAnimeForFrontend } from '../lib/universal-helpers';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -33,12 +33,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return sendError(res, 400, 'Valid anime ID is required');
     }
 
-    console.log(`Real anime details request: ${animeId}`);
+    console.log(`Authentic anime details request: ${animeId}`);
     
-    const animeDetails = await realAnimeSamaScraper.getRealAnimeSeasons(animeId);
+    const animeDetails = await authenticCatalogueScraper.getAuthenticAnimeDetails(animeId);
     
     if (!animeDetails) {
-      return sendError(res, 404, 'Anime not found on anime-sama.fr');
+      return sendError(res, 404, `Anime '${animeId}' not found on anime-sama.fr`);
     }
 
     // Transformation universelle des données pour correspondre au frontend

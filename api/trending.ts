@@ -12,7 +12,7 @@ import {
   cleanPageContent,
   BASE_URL
 } from './lib/core';
-import { realAnimeSamaScraper } from './lib/real-anime-sama-scraper';
+import { authenticCatalogueScraper } from './lib/authentic-catalogue-scraper';
 import { transformTrendingForFrontend } from './lib/universal-helpers';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -44,11 +44,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('Fetching real trending anime from anime-sama.fr');
     
-    // Utiliser le catalogue réel comme source de trending
-    const realCatalogue = await realAnimeSamaScraper.getReallCatalogueAnimes();
+    // Utiliser le catalogue authentique comme source de trending
+    const authenticCatalogue = await authenticCatalogueScraper.getAuthenticCatalogue();
     
     // Transformer les données pour le frontend de manière universelle
-    const trendingResults = realCatalogue.slice(0, 20).map((anime: any, index: number) => 
+    const trendingResults = authenticCatalogue.slice(0, 20).map((anime: any, index: number) => 
       transformTrendingForFrontend(anime, index)
     );
     
