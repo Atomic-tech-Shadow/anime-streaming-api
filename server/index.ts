@@ -1,5 +1,7 @@
 import { createServer } from 'http';
 import { parse } from 'url';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 import dotenv from 'dotenv';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -215,12 +217,55 @@ const server = createServer(async (req, res) => {
       });
     }
 
-    else if (pathname === '/' || pathname === '/api') {
+    else if (pathname === '/api' || pathname === '/api/') {
       const { default: handler } = await import('../api/index.ts');
       await handler(vercelReq, vercelRes).catch(error => {
         console.error('Erreur handler index:', error);
         throw error;
       });
+    }
+    // Servir les fichiers statiques depuis le dossier public
+    else if (pathname === '/' || pathname.startsWith('/public/') || pathname.endsWith('.html') || pathname.endsWith('.js') || pathname.endsWith('.css')) {
+      let filePath;
+      
+      if (pathname === '/') {
+        filePath = join(process.cwd(), 'public', 'index.html');
+      } else if (pathname.startsWith('/public/')) {
+        filePath = join(process.cwd(), pathname);
+      } else {
+        filePath = join(process.cwd(), 'public', pathname);
+      }
+
+      if (existsSync(filePath)) {
+        try {
+          const content = readFileSync(filePath);
+          
+          // Déterminer le type de contenu
+          let contentType = 'text/plain';
+          if (filePath.endsWith('.html')) {
+            contentType = 'text/html; charset=utf-8';
+          } else if (filePath.endsWith('.js')) {
+            contentType = 'application/javascript; charset=utf-8';
+          } else if (filePath.endsWith('.css')) {
+            contentType = 'text/css; charset=utf-8';
+          } else if (filePath.endsWith('.json')) {
+            contentType = 'application/json; charset=utf-8';
+          }
+          
+          res.setHeader('Content-Type', contentType);
+          res.statusCode = 200;
+          res.end(content);
+        } catch (error) {
+          console.error('Erreur lecture fichier:', error);
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'text/plain');
+          res.end('Erreur interne du serveur');
+        }
+      } else {
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'text/html');
+        res.end('<h1>404 - Page Not Found</h1>');
+      }
     }
     else {
       res.statusCode = 404;
