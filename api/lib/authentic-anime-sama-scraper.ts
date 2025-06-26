@@ -120,26 +120,12 @@ export class AuthenticAnimeSamaScraper {
         }));
       }
       
-      // Si aucun résultat direct, créer un résultat générique basé sur la recherche
-      return [{
-        id: directId,
-        title: query.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-        url: `${BASE_URL}/catalogue/${directId}/`,
-        type: 'anime',
-        status: 'Recherché',
-        image: `https://cdn.statically.io/gh/Anime-Sama/IMG/img/contenu/${directId}.jpg`
-      }];
+      // Aucun résultat trouvé
+      return [];
       
     } catch (error) {
-      // Fallback: retourner au moins un résultat générique
-      const directId = query.toLowerCase().replace(/\s+/g, '-');
-      return [{
-        id: directId,
-        title: query.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-        url: `${BASE_URL}/catalogue/${directId}/`,
-        type: 'anime',
-        status: 'Disponible'
-      }];
+      console.error('Search error:', error);
+      return [];
     }
   }
 
@@ -228,7 +214,7 @@ export class AuthenticAnimeSamaScraper {
       let year = new Date().getFullYear().toString();
       const yearMatch = response.data.match(/(\d{4})/g);
       if (yearMatch) {
-        const years = yearMatch.filter(y => parseInt(y) >= 1950 && parseInt(y) <= new Date().getFullYear());
+        const years = yearMatch.filter((y: string) => parseInt(y) >= 1950 && parseInt(y) <= new Date().getFullYear());
         if (years.length > 0) {
           year = years[years.length - 1];
         }

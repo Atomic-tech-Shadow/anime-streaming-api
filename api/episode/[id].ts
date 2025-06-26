@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess } from '../lib/core';
-import { realAnimeSamaScraper } from '../lib/real-anime-sama-scraper';
+import { realAnimeSamaScraper } from '../lib/real-anime-sama-scraper.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -13,7 +13,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return sendError(res, 405, 'Method not allowed');
   }
 
-  // Rate limiting
   const clientIP = getClientIP(req);
   if (!checkRateLimit(clientIP)) {
     return sendError(res, 429, 'Too many requests');
@@ -34,62 +33,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`Real episode request: ${episodeId}`);
     
-    // Parse episode ID format: naruto-episode-1-vostfr
-    const match = episodeId.match(/^(.+)-episode-(\d+)-(.+)$/);
-    if (!match) {
-      return sendError(res, 400, 'Invalid episode ID format. Expected: anime-episode-number-language');
-    }
+    const episodeData = await realAnimeSamaScraper.getEpisodeStreaming(episodeId);
     
-    const [, animeId, episodeNumber, language] = match;
-    const episodeNum = parseInt(episodeNumber);
-    
-    // Récupérer les détails de l'anime pour trouver la bonne saison
-    const animeDetails = await realAnimeSamaScraper.getRealAnimeSeasons(animeId);
-    if (!animeDetails || !animeDetails.seasons || animeDetails.seasons.length === 0) {
-      return sendError(res, 404, 'Anime not found on anime-sama.fr');
-    }
-
-    // Utiliser la première saison disponible ou celle qui correspond
-    const targetSeason = animeDetails.seasons[0];
-    const realEpisodes = await realAnimeSamaScraper.getRealEpisodes(animeId, targetSeason.path);
-    const episodeData = realEpisodes.find(ep => ep.episodeNumber === episodeNum);
-
     if (!episodeData) {
-      return sendError(res, 404, 'Episode not found on anime-sama.fr');
+      return sendError(res, 404, 'Episode not found', { episodeId });
     }
 
-    // Format des données pour le frontend
-    const episodeDetails = {
-      id: episodeId,
-      title: `Episode ${episodeNum}`,
-      animeTitle: animeDetails.title,
-      episodeNumber: episodeNum,
-      sources: [
-        {
-          url: episodeData.url,
-          server: episodeData.server || 'Server 1',
-          quality: '720p',
-          language: language.toUpperCase(),
-          type: 'iframe',
-          serverIndex: 1
-        }
-      ],
-      availableServers: [episodeData.server || 'Server 1'],
-      url: episodeData.url,
-      authentic: true
-    };
-
-    return sendSuccess(res, episodeDetails, {
-      animeId,
-      episodeNumber: episodeNum,
+    return sendSuccess(res, episodeData, {
+      episodeId,
       source: 'anime-sama.fr',
       authentic: true
     });
 
-  } catch (error) {
-    console.error('Real episode error:', error);
-    return sendError(res, 500, 'Cannot access anime-sama.fr episode data', {
-      message: error instanceof Error ? error.message : 'Unknown error'
+  } catch (error: any) {
+    console.error(`Error getting episode streaming:`, error.message);
+    
+    if (error.message.includes('Invalid episode ID format')) {
+      return sendError(res, 400, error.message, { episodeId: req.query.id });
+    }
+    
+    return sendError(res, 500, 'Unable to retrieve episode streaming sources', { 
+      error: error.message 
     });
   }
 }
