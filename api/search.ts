@@ -29,12 +29,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`Searching real anime-sama.fr data for: ${searchQuery}`);
 
     // Recherche UNIQUEMENT dans les données authentiques d'anime-sama.fr
-    const results = await realAnimeSamaScraper.searchRealAnimes(searchQuery);
+    const rawResults = await realAnimeSamaScraper.searchRealAnimes(searchQuery);
 
-    return sendSuccess(res, {
+    // Transformer les résultats pour le frontend
+    const searchResults = rawResults.map((anime: any) => ({
+      id: anime.id,
+      title: anime.title,
+      url: anime.url,
+      type: 'anime',
+      status: 'En cours',
+      image: `https://via.placeholder.com/300x400/1a1a2e/ffffff?text=${encodeURIComponent(anime.title)}`,
+      authentic: true
+    }));
+
+    return sendSuccess(res, searchResults, {
       query: searchQuery,
-      results: results,
-      total: results.length,
+      total: searchResults.length,
       timestamp: new Date().toISOString(),
       source: 'anime-sama.fr',
       authentic: true

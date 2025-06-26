@@ -46,81 +46,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Utiliser le catalogue réel comme source de trending
     const realCatalogue = await realAnimeSamaScraper.getReallCatalogueAnimes();
     
-    // Utiliser le catalogue réel comme trending
-    const results = realCatalogue.slice(0, 20);
+    // Transformer les données pour le frontend
+    const trendingResults = realCatalogue.slice(0, 20).map((anime: any, index: number) => ({
+      id: anime.id,
+      title: anime.title,
+      url: anime.url,
+      type: 'anime',
+      status: 'En cours',
+      image: `https://via.placeholder.com/300x400/1a1a2e/ffffff?text=${encodeURIComponent(anime.title)}`,
+      rank: index + 1,
+      authentic: true
+    }));
     
-    setCache(cacheKey, results);
+    setCache(cacheKey, trendingResults);
     
-    return sendSuccess(res, results, {
-      count: results.length,
+    return sendSuccess(res, trendingResults, {
+      count: trendingResults.length,
       source: 'anime-sama.fr',
       authentic: true
-    });
-    
-    // Extract trending anime from homepage
-    $('.anime-card, .anime-item, .card-anime, .trending-anime, .popular-anime, .featured-anime').each((i: number, element: any) => {
-      const $el = $(element);
-      const titleElement = $el.find('.anime-title, .title, h3, h4, .name').first();
-      const linkElement = $el.find('a').first();
-      const imageElement = $el.find('img').first();
-      
-      const title = titleElement.text().trim();
-      const url = linkElement.attr('href');
-      const image = imageElement.attr('src') || imageElement.attr('data-src');
-      
-      if (title && url && url.includes('/catalogue/')) {
-        const animeId = url.split('/catalogue/')[1]?.split('/')[0];
-        if (animeId && animeId !== '') {
-          // Avoid duplicates
-          const exists = results.find(r => r.id === animeId);
-          if (!exists) {
-            results.push({
-              id: animeId,
-              title,
-              url: url.startsWith('http') ? url : `${BASE_URL}${url}`,
-              image: image ? (image.startsWith('http') ? image : `${BASE_URL}${image}`) : null,
-              type: 'anime',
-              rank: results.length + 1
-            });
-          }
-        }
-      }
-    });
-
-    // If no trending found on homepage, extract from catalogue
-    if (results.length === 0) {
-      const catalogueResponse = await axiosInstance.get('/catalogue');
-      const catalogueHtml = cleanPageContent(catalogueResponse.data);
-      const $catalogue = cheerio.load(catalogueHtml);
-      
-      $catalogue('a[href*="/catalogue/"]').slice(0, 20).each((i: number, element: any) => {
-        const $el = $catalogue(element);
-        const href = $el.attr('href');
-        const title = $el.text().trim() || $el.attr('title') || '';
-        const img = $el.find('img').first().attr('src');
-        
-        if (href && title) {
-          const animeId = href.split('/catalogue/')[1]?.split('/')[0];
-          if (animeId && animeId !== '') {
-            results.push({
-              id: animeId,
-              title: title,
-              url: href.startsWith('http') ? href : `${BASE_URL}${href}`,
-              image: img ? (img.startsWith('http') ? img : `${BASE_URL}${img}`) : null,
-              type: 'anime',
-              rank: i + 1
-            });
-          }
-        }
-      });
-    }
-
-    const trendingData = results.slice(0, 20);
-    setCache(cacheKey, trendingData);
-    
-    return sendSuccess(res, trendingData, {
-      count: trendingData.length,
-      source: 'anime-sama.fr'
     });
 
   } catch (error) {

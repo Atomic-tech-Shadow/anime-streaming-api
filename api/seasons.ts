@@ -20,12 +20,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { animeId, season, language = 'VOSTFR' } = req.query;
+    const lang = Array.isArray(language) ? language[0] : language;
 
     if (!animeId || !season || typeof animeId !== 'string' || typeof season !== 'string') {
       return sendError(res, 400, 'AnimeId and season are required');
     }
 
-    console.log(`Real season episodes request: ${animeId} - Season ${season} (${language})`);
+    console.log(`Real season episodes request: ${animeId} - Season ${season} (${lang})`);
 
     // Récupérer les vraies données de la saison depuis anime-sama.fr
     const animeDetails = await realAnimeSamaScraper.getRealAnimeSeasons(animeId);
@@ -34,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return sendError(res, 404, 'Anime not found on anime-sama.fr');
     }
 
-    const targetSeason = animeDetails.seasons.find(s => s.number === parseInt(season));
+    const targetSeason = animeDetails.seasons.find((s: any) => s.number === parseInt(season));
     if (!targetSeason) {
       return sendError(res, 404, 'Season not found on anime-sama.fr');
     }
@@ -43,21 +44,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`Extracting episodes from: ${animeId}/${targetSeason.path}`);
     const realEpisodes = await realAnimeSamaScraper.getRealEpisodes(animeId, targetSeason.path);
     
+    // Format des épisodes pour le frontend
     const episodes = realEpisodes.map(ep => ({
-      id: `${animeId}-${targetSeason.path.replace('/', '-')}-${ep.episodeNumber}`,
-      episodeNumber: ep.episodeNumber,
+      id: `${animeId}-episode-${ep.episodeNumber}-${lang.toLowerCase()}`,
       title: `Episode ${ep.episodeNumber}`,
+      episodeNumber: ep.episodeNumber,
       url: ep.url,
+      language: lang,
+      available: true,
       server: ep.server,
       authentic: true
     }));
 
-    return sendSuccess(res, {
+    return sendSuccess(res, episodes, {
       animeId,
       seasonNumber: parseInt(season),
       seasonName: targetSeason.name,
       language,
-      episodes,
       totalEpisodes: episodes.length,
       animeInfo: {
         title: animeDetails.title,

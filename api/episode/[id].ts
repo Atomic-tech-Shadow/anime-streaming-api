@@ -34,32 +34,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`Real episode request: ${episodeId}`);
     
-    // Parse episode ID to extract anime and season info
-    // Format attendu: one-piece-saison11-vf-1087
-    const episodeParts = episodeId.split('-');
-    if (episodeParts.length < 4) {
-      return sendError(res, 400, 'Invalid episode ID format. Expected: anime-seasonX-lang-episode');
+    // Parse episode ID format: naruto-episode-1-vostfr
+    const match = episodeId.match(/^(.+)-episode-(\d+)-(.+)$/);
+    if (!match) {
+      return sendError(res, 400, 'Invalid episode ID format. Expected: anime-episode-number-language');
     }
     
-    const animeId = episodeParts[0] + '-' + episodeParts[1]; // one-piece
-    const seasonPath = `${episodeParts[2]}/${episodeParts[3]}`;
-    const episodeNumber = parseInt(episodeParts[episodeParts.length - 1]);
+    const [, animeId, episodeNumber, language] = match;
+    const episodeNum = parseInt(episodeNumber);
     
-    const realEpisodes = await realAnimeSamaScraper.getRealEpisodes(animeId, seasonPath);
-    const episodeData = realEpisodes.find(ep => ep.episodeNumber === episodeNumber);
+    // Récupérer les détails de l'anime pour trouver la bonne saison
+    const animeDetails = await realAnimeSamaScraper.getRealAnimeSeasons(animeId);
+    if (!animeDetails || !animeDetails.seasons || animeDetails.seasons.length === 0) {
+      return sendError(res, 404, 'Anime not found on anime-sama.fr');
+    }
+
+    // Utiliser la première saison disponible ou celle qui correspond
+    const targetSeason = animeDetails.seasons[0];
+    const realEpisodes = await realAnimeSamaScraper.getRealEpisodes(animeId, targetSeason.path);
+    const episodeData = realEpisodes.find(ep => ep.episodeNumber === episodeNum);
 
     if (!episodeData) {
       return sendError(res, 404, 'Episode not found on anime-sama.fr');
     }
 
-    return sendSuccess(res, {
+    // Format des données pour le frontend
+    const episodeDetails = {
       id: episodeId,
-      episodeNumber: episodeData.episodeNumber,
+      title: `Episode ${episodeNum}`,
+      animeTitle: animeDetails.title,
+      episodeNumber: episodeNum,
+      sources: [
+        {
+          url: episodeData.url,
+          server: episodeData.server || 'Server 1',
+          quality: '720p',
+          language: language.toUpperCase(),
+          type: 'iframe',
+          serverIndex: 1
+        }
+      ],
+      availableServers: [episodeData.server || 'Server 1'],
       url: episodeData.url,
-      server: episodeData.server,
-      alternativeServers: episodeData.alternativeServers || [],
-      authentic: true,
-      source: 'anime-sama.fr'
+      authentic: true
+    };
+
+    return sendSuccess(res, episodeDetails, {
+      animeId,
+      episodeNumber: episodeNum,
+      source: 'anime-sama.fr',
+      authentic: true
     });
 
   } catch (error) {
