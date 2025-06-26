@@ -149,32 +149,145 @@ export class AuthenticAnimeSamaScraper {
   public async getAnimeDetails(animeId: string): Promise<AuthenticAnimeResponse | null> {
     await randomDelay(1000, 2000);
     
-    const animeUrl = `/catalogue/${animeId}`;
-    const response = await this.axiosInstance.get(animeUrl);
-    const $ = cheerio.load(cleanPageContent(response.data));
-    
-    const title = $('h1, .title, .anime-title').first().text().trim() || 
-                  $('title').text().split('|')[0].trim();
-    
-    if (!title) return null;
-    
-    // Extraction des saisons depuis les appels panneauAnime
-    const seasons = this.extractSeasonsFromPanneauAnime($, response.data, animeId);
-    
-    // Générer des IDs d'épisodes dynamiques basés sur l'anime recherché
-    const episodeIds = this.generateEpisodeIds(animeId, seasons);
-    
-    return {
-      id: animeId,
-      title,
-      description: $('.description, .synopsis, .resume').first().text().trim() || '',
-      genres: this.extractGenres($),
-      status: 'En cours',
-      year: new Date().getFullYear().toString(),
-      seasons,
-      episodeIds, // Ajouter les IDs d'épisodes disponibles
-      url: `${BASE_URL}${animeUrl}`
-    };
+    try {
+      const animeUrl = `/catalogue/${animeId}/`;
+      console.log(`Fetching anime details from: ${BASE_URL}${animeUrl}`);
+      
+      const response = await this.axiosInstance.get(animeUrl);
+      const $ = cheerio.load(cleanPageContent(response.data));
+      
+      // Extraction améliorée du titre depuis différentes sources possibles
+      let title = '';
+      
+      // Essayer différents sélecteurs pour le titre
+      const titleSelectors = [
+        'h1.title',
+        'h1',
+        '.anime-title',
+        '.title',
+        '.page-title',
+        'title'
+      ];
+      
+      for (const selector of titleSelectors) {
+        const element = $(selector).first();
+        if (element.length) {
+          title = element.text().trim();
+          if (selector === 'title') {
+            title = title.split('|')[0].split('-')[0].trim();
+          }
+          if (title && title.length > 2) break;
+        }
+      }
+      
+      // Si pas de titre trouvé, utiliser l'ID formaté
+      if (!title) {
+        title = animeId.split('-').map(word => 
+          word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+      }
+      
+      console.log(`Extracted title: ${title}`);
+      
+      if (!title || title.length < 2) {
+        console.log(`No valid title found for ${animeId}`);
+        return null;
+      }
+      
+      // Extraction de la description
+      const descriptionSelectors = [
+        '.description',
+        '.synopsis', 
+        '.resume',
+        '.summary',
+        '.anime-description',
+        'p:contains("Synopsis")',
+        '.content p'
+      ];
+      
+      let description = '';
+      for (const selector of descriptionSelectors) {
+        const desc = $(selector).first().text().trim();
+        if (desc && desc.length > 10) {
+          description = desc;
+          break;
+        }
+      }
+      
+      // Extraction des genres
+      const genres = this.extractGenres($);
+      
+      // Extraction du statut
+      let status = 'Disponible';
+      const statusText = $('.status, .anime-status').text().trim();
+      if (statusText) {
+        status = statusText;
+      }
+      
+      // Extraction de l'année
+      let year = new Date().getFullYear().toString();
+      const yearMatch = response.data.match(/(\d{4})/g);
+      if (yearMatch) {
+        const years = yearMatch.filter(y => parseInt(y) >= 1950 && parseInt(y) <= new Date().getFullYear());
+        if (years.length > 0) {
+          year = years[years.length - 1];
+        }
+      }
+      
+      // Extraction des saisons depuis les appels panneauAnime
+      const seasons = this.extractSeasonsFromPanneauAnime($, response.data, animeId);
+      
+      // Générer des IDs d'épisodes dynamiques basés sur l'anime recherché
+      const episodeIds = this.generateEpisodeIds(animeId, seasons);
+      
+      console.log(`Successfully extracted anime details for ${animeId}`);
+      
+      return {
+        id: animeId,
+        title,
+        description,
+        genres,
+        status,
+        year,
+        seasons,
+        episodeIds, // Ajouter les IDs d'épisodes disponibles
+        url: `${BASE_URL}${animeUrl}`
+      };
+      
+    } catch (error: any) {
+      console.error(`Error fetching anime details for ${animeId}:`, error.message);
+      
+      // Retry with different URL format
+      if (error.response?.status === 404) {
+        try {
+          const alternateUrl = `/catalogue/${animeId}`;
+          console.log(`Retrying with alternate URL: ${BASE_URL}${alternateUrl}`);
+          
+          const response = await this.axiosInstance.get(alternateUrl);
+          const $ = cheerio.load(cleanPageContent(response.data));
+          
+          const title = animeId.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ');
+          
+          return {
+            id: animeId,
+            title,
+            description: '',
+            genres: [],
+            status: 'Disponible',
+            year: new Date().getFullYear().toString(),
+            seasons: [],
+            episodeIds: [],
+            url: `${BASE_URL}${alternateUrl}`
+          };
+        } catch (retryError: any) {
+          console.error(`Retry failed for ${animeId}:`, retryError.message);
+        }
+      }
+      
+      return null;
+    }
   }
 
   /**
