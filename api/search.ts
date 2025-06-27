@@ -2,7 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess, createAxiosInstance, cleanPageContent, BASE_URL } from './lib/core';
 import { transformSearchResultForFrontend } from './lib/universal-helpers';
 import * as cheerio from 'cheerio';
-import { authenticCatalogueScraper } from './lib/authentic-catalogue-scraper.js';
+import { completeAnimeSamaScraper } from './lib/complete-anime-sama-scraper.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -30,8 +30,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`Searching real anime-sama.fr data for: ${searchQuery}`);
 
-    // Utiliser le scraper authentique
-    const results = await authenticCatalogueScraper.searchAuthenticAnimes(searchQuery);
+    // Utiliser le scraper complet
+    const results = await completeAnimeSamaScraper.searchCompleteAnimes(searchQuery);
     
     console.log(`✅ Found ${results.length} matching animes for "${searchQuery}"`);
     

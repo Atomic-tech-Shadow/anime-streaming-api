@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess } from './lib/core';
-import { authenticCatalogueScraper } from './lib/authentic-catalogue-scraper';
+import { completeAnimeSamaScraper } from './lib/complete-anime-sama-scraper';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -29,10 +29,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Extraire UNIQUEMENT les données authentiques d'anime-sama.fr
     try {
       if (search && typeof search === 'string') {
-        results = await authenticCatalogueScraper.searchAuthenticAnimes(search);
+        results = await completeAnimeSamaScraper.searchCompleteAnimes(search);
       } else {
         // Pour le catalogue complet, extraire la vraie liste
-        results = await authenticCatalogueScraper.getAuthenticCatalogue();
+        results = await completeAnimeSamaScraper.getCompleteAnimeCatalogue();
       }
     } catch (scraperError) {
       console.error('Cannot access anime-sama.fr:', scraperError);
