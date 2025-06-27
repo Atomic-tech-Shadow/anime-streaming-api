@@ -27,43 +27,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`Embed request: ${episodeId}`);
     
-    // Parse episode ID format: naruto-episode-1-vostfr
-    const match = episodeId.match(/^(.+)-episode-(\d+)-(.+)$/);
-    if (!match) {
-      return sendError(res, 400, 'Invalid episode ID format');
-    }
-    
-    const [, animeId, episodeNumber, language] = match;
-    const episodeNum = parseInt(episodeNumber);
-    
-    // Récupérer les détails de l'anime
-    const animeDetails = await realAnimeSamaScraper.getRealAnimeSeasons(animeId);
-    if (!animeDetails || !animeDetails.seasons || animeDetails.seasons.length === 0) {
-      return res.status(404).send(`
-        <html>
-          <body style="background: #1a1a2e; color: white; font-family: Arial; text-align: center; padding: 50px;">
-            <h2>Anime non trouvé</h2>
-            <p>L'anime "${animeId}" n'existe pas sur anime-sama.fr</p>
-          </body>
-        </html>
-      `);
-    }
-
-    // Utiliser la première saison disponible
-    const targetSeason = animeDetails.seasons[0];
-    const realEpisodes = await realAnimeSamaScraper.getRealEpisodes(animeId, targetSeason.path);
-    const episodeData = realEpisodes.find(ep => ep.episodeNumber === episodeNum);
-
-    if (!episodeData) {
+    // Récupérer les détails de l'épisode via l'API episode
+    const episodeData = await realAnimeSamaScraper.getEpisodeStreaming(episodeId);
+    if (!episodeData || !episodeData.sources || episodeData.sources.length === 0) {
       return res.status(404).send(`
         <html>
           <body style="background: #1a1a2e; color: white; font-family: Arial; text-align: center; padding: 50px;">
             <h2>Episode non trouvé</h2>
-            <p>L'épisode ${episodeNum} de "${animeDetails.title}" n'existe pas</p>
+            <p>L'épisode "${episodeId}" n'existe pas</p>
           </body>
         </html>
       `);
     }
+
+    // Utiliser la première source disponible
+    const firstSource = episodeData.sources[0];
 
     // Retourner une page embed avec l'iframe
     const embedHtml = `
@@ -72,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Episode ${episodeNum} - ${animeDetails.title}</title>
+          <title>${episodeData.title} - ${episodeData.animeTitle || 'Anime'}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { background: #000; overflow: hidden; }
@@ -86,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         </head>
         <body>
           <iframe 
-            src="${episodeData.url}" 
+            src="${firstSource.url}" 
             allowfullscreen 
             webkitallowfullscreen 
             mozallowfullscreen
