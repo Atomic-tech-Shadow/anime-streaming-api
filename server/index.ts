@@ -195,6 +195,27 @@ const server = createServer(async (req, res) => {
         throw error;
       });
     }
+    else if (pathname === '/api/analyze-features') {
+      const { default: handler } = await import('../api/analyze-features.ts');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler analyze-features:', error);
+        throw error;
+      });
+    }
+    else if (pathname === '/api/complete-scrape') {
+      const { default: handler } = await import('../api/complete-scrape.ts');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler complete-scrape:', error);
+        throw error;
+      });
+    }
+    else if (pathname === '/api/scrape-status') {
+      const { default: handler } = await import('../api/scrape-status.ts');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler scrape-status:', error);
+        throw error;
+      });
+    }
     else if (pathname === '/api/seasons') {
       const { default: handler } = await import('../api/seasons.ts');
       await handler(vercelReq, vercelRes).catch(error => {
