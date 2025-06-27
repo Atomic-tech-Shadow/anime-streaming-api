@@ -232,6 +232,24 @@ const server = createServer(async (req, res) => {
         throw error;
       });
     }
+    else if (pathname.startsWith('/api/seasons/')) {
+      const animeId = pathname.split('/')[3];
+      vercelReq.query = { ...vercelReq.query, animeId };
+      const { default: handler } = await import('../api/seasons/[animeId].ts');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler seasons/animeId:', error);
+        throw error;
+      });
+    }
+    else if (pathname.startsWith('/api/episodes/')) {
+      const animeId = pathname.split('/')[3];
+      vercelReq.query = { ...vercelReq.query, animeId };
+      const { default: handler } = await import('../api/episodes/[animeId].ts');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler episodes/animeId:', error);
+        throw error;
+      });
+    }
     else if (pathname === '/api/content') {
       const { default: handler } = await import('../api/content.ts');
       await handler(vercelReq, vercelRes).catch(error => {
