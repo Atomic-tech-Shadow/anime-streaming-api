@@ -68,8 +68,8 @@ const AnimePlayerPage: React.FC = () => {
   const [episodeLoading, setEpisodeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ CORRECTION: API Base URL configurée
-  const API_BASE = 'http://localhost:5000';
+  // ✅ CORRECTION: API Base URL configurée (production)
+  const API_BASE = 'https://api-anime-sama.onrender.com';
 
   // Charger les données de l'anime
   useEffect(() => {
