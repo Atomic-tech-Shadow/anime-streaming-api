@@ -142,6 +142,15 @@ const server = createServer(async (req, res) => {
         throw error;
       });
     }
+    else if (pathname.startsWith('/api/film/')) {
+      const id = pathname.split('/')[3];
+      vercelReq.query = { ...vercelReq.query, id };
+      const { default: handler } = await import('../api/film/[id].ts');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler film:', error);
+        throw error;
+      });
+    }
     else if (pathname.startsWith('/api/embed/')) {
       const episodeId = pathname.split('/')[3];
       vercelReq.query = { ...vercelReq.query, episodeId };
