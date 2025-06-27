@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess } from '../lib/core';
-import { realAnimeSamaScraper } from '../lib/real-anime-sama-scraper.js';
+import { animeSamaNavigator } from '../lib/anime-sama-navigator';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -33,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`Real episode request: ${episodeId}`);
     
-    const episodeData = await realAnimeSamaScraper.getEpisodeStreaming(episodeId);
+    const episodeData = await animeSamaNavigator.getEpisodeStreaming(episodeId);
     
     if (!episodeData) {
       return sendError(res, 404, 'Episode not found', { episodeId });

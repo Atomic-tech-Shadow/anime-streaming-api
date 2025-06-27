@@ -174,6 +174,7 @@ This is a Node.js REST API built with Express and TypeScript that scrapes anime-
 - June 27, 2025. Correction complète des erreurs de configuration frontend - identifié et corrigé 4 erreurs critiques dans anime-player.tsx : API_BASE vide, endpoint /api/seasons inexistant, URL iframe embed incorrecte, sources YouTube factices. Créé fichier anime-player-corrected.tsx avec configuration API appropriée et gestion d'erreurs renforcée.
 - June 27, 2025. Configuration finale avec API de production - mise à jour du frontend pour utiliser l'URL déployée https://api-anime-sama.onrender.com au lieu de localhost. API de production validée et fonctionnelle avec endpoints /health et /episode testés avec succès.
 - June 27, 2025. Migration complète de Replit Agent vers environnement Replit standard réussie - installation des dépendances Node.js complète, serveur Express fonctionnel sur port 5000, interface utilisateur créée avec page d'accueil (/public/index.html) et interface de test (/public/test-anime.html). API opérationnelle avec extraction authentique de données depuis anime-sama.fr, tous les endpoints configurés et testés.
+- June 27, 2025. Correction finale de l'extraction des sources de streaming - l'API extrait maintenant les vraies URLs vidéo depuis anime-sama.fr au lieu de retourner les URLs des pages. Testé avec succès sur Naruto EP1 VF (2 sources: Sibnet + Vidmoly) et One Piece EP1 VF (3 sources: Sibnet + Vidmoly + Sendvid). Résolution du problème "A Silent Voice épisode 24" - identifié comme un film, non une série avec épisodes.
 
 ## User Preferences
 

@@ -490,16 +490,14 @@ export class RealAnimeSamaScraper {
         }
       }
       
-      // Si aucune source trouvée, créer des sources par défaut
+      // Si aucune source trouvée via episodes.js, essayer extraction directe depuis la page streaming
       if (sources.length === 0) {
-        sources.push({
-          url: `https://www.anime-sama.fr/streaming/${animeId}-episode-${episodeNumber}-${language.toLowerCase()}`,
-          server: 'Serveur 1',
-          quality: 'HD',
-          language,
-          type: 'iframe',
-          serverIndex: 1
-        });
+        try {
+          const streamingSources = await this.extractStreamingFromPage(animeId, episodeNumber, language);
+          sources.push(...streamingSources);
+        } catch (error) {
+          console.error('Erreur extraction page streaming:', error);
+        }
       }
       
       return {
@@ -516,6 +514,137 @@ export class RealAnimeSamaScraper {
       console.error(`Error getting episode streaming:`, error.message);
       throw error;
     }
+  }
+
+  /**
+   * Extrait les sources de streaming directement depuis la page streaming d'anime-sama.fr
+   */
+  private async extractStreamingFromPage(animeId: string, episodeNumber: number, language: 'VF' | 'VOSTFR'): Promise<RealVideoSource[]> {
+    const sources: RealVideoSource[] = [];
+    
+    try {
+      const streamingUrl = `https://www.anime-sama.fr/streaming/${animeId}-episode-${episodeNumber}-${language.toLowerCase()}`;
+      console.log(`Extraction depuis: ${streamingUrl}`);
+      
+      const response = await this.axiosInstance.get(streamingUrl, {
+        headers: {
+          'Referer': `https://anime-sama.fr/catalogue/${animeId}/`,
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      if (response.status !== 200) {
+        throw new Error(`Page non accessible: ${response.status}`);
+      }
+      
+      const pageContent = response.data;
+      const $ = cheerio.load(pageContent);
+      
+      // Recherche d'iframes de streaming
+      $('iframe').each((index, element) => {
+        const src = $(element).attr('src');
+        if (src && this.isValidStreamingSource(src)) {
+          sources.push({
+            url: src.startsWith('http') ? src : `https:${src}`,
+            server: `Serveur ${index + 1}`,
+            quality: this.detectVideoQuality(src),
+            language,
+            type: 'iframe',
+            serverIndex: index + 1
+          });
+        }
+      });
+      
+      // Recherche de liens vidéo directs dans le JavaScript
+      const scriptMatches = pageContent.match(/(?:src|url)[\s]*[:=][\s]*['"`]([^'"`]+\.(?:mp4|m3u8|webm))/gi);
+      if (scriptMatches) {
+        scriptMatches.forEach((match: string, index: number) => {
+          const urlMatch = match.match(/['"`]([^'"`]+)['"`]/);
+          if (urlMatch && urlMatch[1]) {
+            const videoUrl = urlMatch[1];
+            if (this.isValidStreamingSource(videoUrl)) {
+              sources.push({
+                url: videoUrl.startsWith('http') ? videoUrl : `https:${videoUrl}`,
+                server: `Direct ${index + 1}`,
+                quality: this.detectVideoQuality(videoUrl),
+                language,
+                type: 'direct',
+                serverIndex: index + sources.length + 1
+              });
+            }
+          }
+        });
+      }
+      
+      // Recherche des players populaires (Lecteur, Player, etc.)
+      const playerSelectors = ['.player iframe', '#player iframe', '.video-player iframe', '[data-src]'];
+      playerSelectors.forEach((selector, selectorIndex) => {
+        $(selector).each((index, element) => {
+          const src = $(element).attr('src') || $(element).attr('data-src');
+          if (src && this.isValidStreamingSource(src)) {
+            sources.push({
+              url: src.startsWith('http') ? src : `https:${src}`,
+              server: `Player ${selectorIndex + 1}`,
+              quality: this.detectVideoQuality(src),
+              language,
+              type: 'iframe',
+              serverIndex: selectorIndex + index + 1
+            });
+          }
+        });
+      });
+      
+      console.log(`Extraction page: ${sources.length} sources trouvées`);
+      
+    } catch (error: any) {
+      console.error(`Erreur extraction page streaming:`, error.message);
+      // En cas d'échec, créer une source de base pour éviter l'erreur totale
+      sources.push({
+        url: `https://www.anime-sama.fr/streaming/${animeId}-episode-${episodeNumber}-${language.toLowerCase()}`,
+        server: 'Anime-Sama',
+        quality: 'HD',
+        language,
+        type: 'iframe',
+        serverIndex: 1
+      });
+    }
+    
+    return sources;
+  }
+
+  /**
+   * Vérifie si une URL est une source de streaming valide
+   */
+  private isValidStreamingSource(url: string): boolean {
+    if (!url || url.length < 5) return false;
+    
+    const validPatterns = [
+      /\.(mp4|m3u8|webm|avi|mkv)$/i,
+      /\/embed\//i,
+      /\/player\//i,
+      /\/watch\//i,
+      /dailymotion\.com/i,
+      /youtube\.com/i,
+      /youtu\.be/i,
+      /vimeo\.com/i,
+      /streamtape/i,
+      /doodstream/i,
+      /mixdrop/i,
+      /uqload/i
+    ];
+    
+    return validPatterns.some(pattern => pattern.test(url));
+  }
+
+  /**
+   * Détecte la qualité vidéo depuis l'URL
+   */
+  private detectVideoQuality(url: string): string {
+    if (url.includes('1080') || url.includes('fhd')) return 'FHD';
+    if (url.includes('720') || url.includes('hd')) return 'HD';
+    if (url.includes('480') || url.includes('sd')) return 'SD';
+    if (url.includes('360')) return '360p';
+    return 'HD'; // Par défaut
   }
 
   /**
