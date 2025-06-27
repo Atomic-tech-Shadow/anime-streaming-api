@@ -56,10 +56,18 @@ const AnimePlayerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   
+  // Récupérer les paramètres de l'URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetSeason = urlParams.get('season');
+  const targetEpisode = urlParams.get('episode');
+  const targetLang = urlParams.get('lang');
+  
   // États pour les données
   const [animeData, setAnimeData] = useState<AnimeData | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>('VOSTFR');
+  const [selectedLanguage, setSelectedLanguage] = useState<'VF' | 'VOSTFR'>(
+    targetLang === 'vf' ? 'VF' : 'VOSTFR'
+  );
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<number>(0);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
@@ -68,8 +76,43 @@ const AnimePlayerPage: React.FC = () => {
   const [episodeLoading, setEpisodeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ CORRECTION: API Base URL configurée (production)
-  const API_BASE = 'https://api-anime-sama.onrender.com';
+  // ✅ CORRECTION 1: Configuration API appropriée
+  const API_BASE = process.env.NODE_ENV === 'production' 
+    ? 'https://api-anime-sama.onrender.com'
+    : 'http://localhost:5000';
+
+  // ✅ Fonction de requête avec retry et gestion d'erreurs
+  const apiRequest = async (endpoint: string, options = {}) => {
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+          signal: controller.signal,
+          ...options
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        attempt++;
+        if (attempt === maxRetries || error.name === 'AbortError') {
+          throw error;
+        }
+        // Attendre avant de réessayer
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  };
 
   // Charger les données de l'anime
   useEffect(() => {
@@ -78,32 +121,34 @@ const AnimePlayerPage: React.FC = () => {
     const loadAnimeData = async () => {
       try {
         setLoading(true);
-        console.log('Chargement données anime pour ID:', id);
+        setError(null);
         
-        const response = await fetch(`${API_BASE}/api/anime/${id}`);
-        console.log('Réponse anime status:', response.status);
+        console.log('Chargement anime:', id);
+        const animeResponse = await apiRequest(`/api/anime/${id}`);
         
-        if (!response.ok) {
-          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('Données anime reçues:', data);
-        
-        if (data.success && data.data) {
-          setAnimeData(data.data);
-          // Sélectionner automatiquement la première saison
-          if (data.data.seasons && data.data.seasons.length > 0) {
-            const firstSeason = data.data.seasons[0];
-            setSelectedSeason(firstSeason);
-            loadSeasonEpisodes(firstSeason);
+        if (animeResponse.success && animeResponse.data) {
+          setAnimeData(animeResponse.data);
+          
+          // Sélectionner la saison demandée ou la première
+          const seasons = animeResponse.data.seasons || [];
+          if (seasons.length > 0) {
+            let seasonToSelect = seasons[0];
+            if (targetSeason) {
+              const requestedSeason = seasons.find((s: any) => s.number === parseInt(targetSeason));
+              if (requestedSeason) {
+                seasonToSelect = requestedSeason;
+              }
+            }
+            
+            setSelectedSeason(seasonToSelect);
+            await loadSeasonEpisodes(seasonToSelect, animeResponse.data);
           }
         } else {
-          setError('Données anime non trouvées');
+          throw new Error('Données anime invalides');
         }
       } catch (err) {
         console.error('Erreur chargement anime:', err);
-        setError('Erreur lors du chargement de l\'anime');
+        setError(`Erreur lors du chargement de l'anime: ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -112,85 +157,85 @@ const AnimePlayerPage: React.FC = () => {
     loadAnimeData();
   }, [id]);
 
-  // ✅ CORRECTION: Génération des épisodes depuis les données de saison
-  const loadSeasonEpisodes = async (season: Season) => {
+  // ✅ CORRECTION 2: Génération correcte des épisodes
+  const loadSeasonEpisodes = async (season: Season, animeData: AnimeData) => {
     if (!animeData) return;
     
     try {
       setEpisodeLoading(true);
-      console.log('Génération épisodes pour:', { 
-        animeId: animeData.id, 
-        season: season.number, 
-        language: selectedLanguage.toLowerCase() 
-      });
+      setError(null);
       
-      // Générer la liste des épisodes pour cette saison
-      const episodesList: Episode[] = [];
+      // Générer les épisodes pour cette saison
+      const episodes: Episode[] = [];
+      const languageCode = selectedLanguage.toLowerCase();
+      
       for (let i = 1; i <= season.episodeCount; i++) {
-        const languageCode = selectedLanguage.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
-        episodesList.push({
-          id: `${animeData.id}-${i}-${languageCode}`,
-          title: `Épisode ${i}`,
+        // ✅ Utiliser la vraie logique de génération d'ID
+        const episodeId = `${animeData.id}-${i}-${languageCode}`;
+        
+        episodes.push({
+          id: episodeId,
+          title: `${animeData.title} - Episode ${i}`,
           episodeNumber: i,
-          url: '',
-          language: languageCode,
+          url: `/episode/${episodeId}`,
+          language: selectedLanguage,
           available: true
         });
       }
       
-      setEpisodes(episodesList);
+      setEpisodes(episodes);
       
-      // Sélectionner automatiquement le premier épisode
-      if (episodesList.length > 0) {
-        const firstEpisode = episodesList[0];
-        setSelectedEpisode(firstEpisode);
-        loadEpisodeSources(firstEpisode.episodeNumber, selectedLanguage);
+      // Sélectionner l'épisode spécifié ou le premier
+      if (episodes.length > 0) {
+        let episodeToSelect = episodes[0];
+        
+        if (targetEpisode) {
+          const requestedEpisode = episodes.find(
+            (ep: any) => ep.episodeNumber === parseInt(targetEpisode)
+          );
+          if (requestedEpisode) {
+            episodeToSelect = requestedEpisode;
+          }
+        }
+        
+        setSelectedEpisode(episodeToSelect);
+        await loadEpisodeSources(episodeToSelect.id);
       }
     } catch (err) {
-      console.error('Erreur génération épisodes:', err);
-      setError('Erreur lors de la génération des épisodes');
+      console.error('Erreur chargement épisodes:', err);
+      setError('Erreur lors du chargement des épisodes');
     } finally {
       setEpisodeLoading(false);
     }
   };
 
-  // ✅ CORRECTION: Chargement des vraies sources depuis l'API
-  const loadEpisodeSources = async (episodeNumber: number, language: 'VF' | 'VOSTFR') => {
-    if (!animeData) return;
-    
+  // ✅ CORRECTION 3: Chargement correct des sources
+  const loadEpisodeSources = async (episodeId: string) => {
     try {
       setEpisodeLoading(true);
+      setError(null);
       
-      // Construire l'ID selon le format: {nom-anime}-{numéro-épisode}-{langue}
-      const languageCode = language.toLowerCase() === 'vf' ? 'vf' : 'vostfr';
-      const episodeId = `${animeData.id}-${episodeNumber}-${languageCode}`;
+      console.log('Chargement sources pour:', episodeId);
       
-      console.log('Chargement épisode avec ID:', episodeId);
+      const response = await apiRequest(`/api/episode/${episodeId}`);
       
-      const response = await fetch(`${API_BASE}/api/episode/${episodeId}`);
-      const data = await response.json();
-      
-      console.log('Réponse API épisode:', data);
-      console.log('Sources disponibles:', data.data?.sources);
-      
-      if (data.success && data.data && data.data.sources && data.data.sources.length > 0) {
-        console.log('Utilisation des vraies sources:', data.data.sources);
-        setEpisodeDetails(data.data);
-        setSelectedPlayer(0); // Réinitialiser au premier lecteur
+      if (response.success && response.data && response.data.sources && response.data.sources.length > 0) {
+        setEpisodeDetails(response.data);
+        setSelectedPlayer(0);
+        console.log('Sources chargées:', response.data.sources.length);
       } else {
-        console.log('Pas de sources disponibles pour cet épisode');
+        console.warn('Aucune source trouvée pour:', episodeId);
         setError('Aucune source vidéo disponible pour cet épisode');
-        setEpisodeDetails(null);
       }
     } catch (err) {
       console.error('Erreur chargement sources:', err);
-      setError('Erreur lors du chargement des sources vidéo');
+      setError(`Erreur lors du chargement des sources: ${err.message}`);
     } finally {
       setEpisodeLoading(false);
     }
   };
 
-  // Navigation entre épisodes
+  // Navigation entre épisodes avec cache reset
   const navigateEpisode = async (direction: 'prev' | 'next') => {
     if (!selectedEpisode) return;
     
@@ -200,22 +245,40 @@ const AnimePlayerPage: React.FC = () => {
     if (newIndex >= 0 && newIndex < episodes.length) {
       const newEpisode = episodes[newIndex];
       setSelectedEpisode(newEpisode);
-      await loadEpisodeSources(newEpisode.episodeNumber, selectedLanguage);
+      setEpisodeDetails(null); // Reset cache
+      await loadEpisodeSources(newEpisode.id);
     }
   };
 
-  // Changer de langue
-  const changeLanguage = (newLanguage: 'VF' | 'VOSTFR') => {
+  // ✅ CORRECTION 4: Changement de langue avec regeneration
+  const changeLanguage = async (newLanguage: 'VF' | 'VOSTFR') => {
+    if (newLanguage === selectedLanguage) return;
+    
     setSelectedLanguage(newLanguage);
-    if (selectedSeason) {
-      loadSeasonEpisodes(selectedSeason);
+    setEpisodeDetails(null); // Reset cache
+    
+    if (selectedSeason && animeData) {
+      await loadSeasonEpisodes(selectedSeason, animeData);
+    }
+  };
+
+  // ✅ Gestion des erreurs de lecteur vidéo
+  const handleVideoError = (error: any) => {
+    console.error('Erreur lecteur vidéo:', error);
+    if (episodeDetails && episodeDetails.sources.length > selectedPlayer + 1) {
+      setSelectedPlayer(selectedPlayer + 1);
+    } else {
+      setError('Aucune source vidéo fonctionnelle disponible');
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-white">Chargement de l'anime...</p>
+        </div>
       </div>
     );
   }
@@ -223,8 +286,14 @@ const AnimePlayerPage: React.FC = () => {
   if (error && !animeData) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-red-500 text-xl flex items-center gap-2">
-          {error}
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white"
+          >
+            Réessayer
+          </button>
         </div>
       </div>
     );
@@ -253,10 +322,22 @@ const AnimePlayerPage: React.FC = () => {
             </motion.button>
           </Link>
           <h1 className="text-lg font-semibold truncate">{animeData.title}</h1>
+          {selectedEpisode && (
+            <span className="ml-auto text-sm text-gray-400">
+              Épisode {selectedEpisode.episodeNumber}
+            </span>
+          )}
         </div>
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Message d'erreur temporaire */}
+        {error && episodeDetails && (
+          <div className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-3">
+            <p className="text-yellow-200 text-sm">{error}</p>
+          </div>
+        )}
+
         {/* Bannière avec titre de la saison */}
         <div className="relative rounded-lg overflow-hidden">
           <div 
@@ -272,7 +353,7 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Sélecteur de langue - Style anime-sama */}
+        {/* Sélecteur de langue */}
         {selectedSeason && selectedSeason.languages.length > 1 && (
           <div className="flex gap-2">
             {selectedSeason.languages.map((lang) => (
@@ -287,26 +368,13 @@ const AnimePlayerPage: React.FC = () => {
                     : 'bg-transparent border-gray-600 text-gray-300 hover:border-gray-400'
                 }`}
               >
-                {/* Drapeau selon la langue */}
-                {lang === 'VF' ? (
-                  <div className="w-6 h-4 bg-white rounded border border-gray-300 flex">
-                    <div className="w-1/3 bg-blue-500 rounded-l"></div>
-                    <div className="w-1/3 bg-white"></div>
-                    <div className="w-1/3 bg-red-500 rounded-r"></div>
-                  </div>
-                ) : (
-                  <div className="w-6 h-4 bg-white rounded border border-gray-300 flex items-center justify-center relative overflow-hidden">
-                    <div className="w-4 h-4 bg-red-600 rounded-full absolute"></div>
-                    <div className="w-2 h-2 bg-white rounded-full absolute z-10"></div>
-                  </div>
-                )}
-                {lang}
+                {lang === 'VF' ? '🇫🇷' : '🇯🇵'} {lang}
               </motion.button>
             ))}
           </div>
         )}
 
-        {/* Sélecteurs - Style anime-sama */}
+        {/* Sélecteurs d'épisode et serveur */}
         {episodes.length > 0 && (
           <div className="grid grid-cols-2 gap-4">
             {/* Sélecteur d'épisode */}
@@ -317,7 +385,8 @@ const AnimePlayerPage: React.FC = () => {
                   const episode = episodes.find(ep => ep.id === e.target.value);
                   if (episode) {
                     setSelectedEpisode(episode);
-                    loadEpisodeSources(episode.episodeNumber, selectedLanguage);
+                    setEpisodeDetails(null); // Reset cache
+                    loadEpisodeSources(episode.id);
                   }
                 }}
                 className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg appearance-none cursor-pointer border-2 border-blue-500 font-bold uppercase text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -332,16 +401,16 @@ const AnimePlayerPage: React.FC = () => {
             </div>
 
             {/* Sélecteur de serveur */}
-            {episodeDetails && episodeDetails.sources.length > 0 && (
+            {episodeDetails && episodeDetails.sources.length > 1 && (
               <div className="relative">
                 <select
                   value={selectedPlayer}
                   onChange={(e) => setSelectedPlayer(parseInt(e.target.value))}
-                  className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg appearance-none cursor-pointer border-2 border-blue-500 font-bold uppercase text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg appearance-none cursor-pointer border-2 border-green-500 font-bold uppercase text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                 >
                   {episodeDetails.sources.map((source, index) => (
                     <option key={index} value={index}>
-                      {source.server} ({source.quality})
+                      {source.server} - {source.quality}
                     </option>
                   ))}
                 </select>
@@ -351,98 +420,69 @@ const AnimePlayerPage: React.FC = () => {
           </div>
         )}
 
-        {/* Dernière sélection */}
-        {selectedEpisode && (
-          <div className="text-gray-300 text-sm">
-            <span className="font-bold">DERNIÈRE SÉLECTION :</span> ÉPISODE {selectedEpisode.episodeNumber}
-          </div>
-        )}
-
-        {/* Navigation entre épisodes - Style anime-sama */}
-        {selectedEpisode && (
-          <div className="flex justify-center items-center gap-4">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => navigateEpisode('prev')}
-              disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === 0}
-              className="p-3 bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft size={24} className="text-white" />
-            </motion.button>
+        {/* Lecteur vidéo */}
+        {episodeDetails && episodeDetails.sources[selectedPlayer] && (
+          <div className="relative">
+            <div className="aspect-video bg-black rounded-lg overflow-hidden">
+              {episodeLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                </div>
+              ) : (
+                <iframe
+                  src={episodeDetails.sources[selectedPlayer].url}
+                  className="w-full h-full"
+                  allowFullScreen
+                  frameBorder="0"
+                  onError={handleVideoError}
+                  title={`${animeData.title} - Episode ${selectedEpisode?.episodeNumber}`}
+                />
+              )}
+            </div>
             
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              <Download size={24} className="text-white" />
-            </motion.button>
-            
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => navigateEpisode('next')}
-              disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === episodes.length - 1}
-              className="p-3 bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight size={24} className="text-white" />
-            </motion.button>
-          </div>
-        )}
-
-        {/* Message d'erreur de pub */}
-        {selectedEpisode && (
-          <div className="text-center text-gray-300 text-sm italic">
-            Pub insistante ou vidéo indisponible ?<br />
-            <span className="font-bold">Changez de lecteur.</span>
-          </div>
-        )}
-
-        {/* ✅ CORRECTION: Lecteur vidéo avec endpoint embed direct */}
-        {episodeDetails && episodeDetails.sources.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-900 rounded-lg overflow-hidden border-2 border-gray-700"
-          >
-            <div className="aspect-video relative">
-              <iframe
-                src={`${API_BASE}/api/embed/${episodeDetails.id}`}
-                className="w-full h-full"
-                allowFullScreen
-                frameBorder="0"
-                title={`${episodeDetails?.title} - ${episodeDetails.sources[selectedPlayer]?.server}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-              />
-              {/* Bouton play overlay pour style anime-sama */}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  className="w-16 h-16 bg-blue-600/80 rounded-full flex items-center justify-center cursor-pointer pointer-events-auto"
-                >
-                  <Play size={32} className="text-white ml-1" />
-                </motion.div>
+            {/* Contrôles de navigation */}
+            <div className="flex justify-between items-center mt-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigateEpisode('prev')}
+                disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+              >
+                <ChevronLeft size={20} />
+                Précédent
+              </motion.button>
+              
+              <div className="text-center">
+                <p className="text-sm text-gray-400">
+                  {episodeDetails.sources.length > 1 && `Serveur ${selectedPlayer + 1}/${episodeDetails.sources.length}`}
+                </p>
               </div>
+              
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigateEpisode('next')}
+                disabled={!selectedEpisode || episodes.findIndex(ep => ep.id === selectedEpisode.id) === episodes.length - 1}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+              >
+                Suivant
+                <ChevronRight size={20} />
+              </motion.button>
             </div>
-          </motion.div>
-        )}
-
-        {episodeLoading && (
-          <div className="text-center py-8">
-            <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-            <div className="text-gray-400">Chargement des épisodes...</div>
           </div>
         )}
 
-        {/* Gestion des erreurs */}
-        {error && episodeDetails === null && (
+        {/* Message si pas de sources */}
+        {!episodeLoading && !episodeDetails && selectedEpisode && (
           <div className="text-center py-8">
-            <div className="text-red-500 text-lg">{error}</div>
-            <div className="text-gray-400 text-sm mt-2">
-              Essayez de changer d'épisode ou de langue
-            </div>
+            <p className="text-gray-400 mb-4">Aucune source vidéo disponible</p>
+            <button 
+              onClick={() => loadEpisodeSources(selectedEpisode.id)}
+              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white"
+            >
+              Réessayer
+            </button>
           </div>
         )}
       </div>
