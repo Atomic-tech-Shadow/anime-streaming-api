@@ -2,58 +2,26 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess } from './lib/core';
 import { realAnimeSamaScraper } from './lib/real-anime-sama-scraper';
 
-// Base de données des épisodes de départ pour chaque saison
-function getSeasonStartEpisode(animeId: string, seasonNumber: number): number {
-  const seasonStartDatabase: { [key: string]: number[] } = {
-    'one-piece': [
-      1,    // Saison 1: épisodes 1-100
-      101,  // Saison 2: épisodes 101-200
-      201,  // Saison 3: épisodes 201-300
-      301,  // Saison 4: épisodes 301-400
-      401,  // Saison 5: épisodes 401-500
-      501,  // Saison 6: épisodes 501-600
-      601,  // Saison 7: épisodes 601-700
-      701,  // Saison 8: épisodes 701-800
-      801,  // Saison 9: épisodes 801-900
-      901,  // Saison 10: épisodes 901-1000
-      1087  // Saison 11: épisodes 1087-1122 (Saga Egghead)
-    ],
-    'naruto': [
-      1,    // Naruto: épisodes 1-220
-      221   // Naruto Shippuden: épisodes 221-720
-    ],
-    'my-hero-academia': [
-      1,    // Saison 1: épisodes 1-13
-      14,   // Saison 2: épisodes 14-38
-      39,   // Saison 3: épisodes 39-63
-      64,   // Saison 4: épisodes 64-88
-      89,   // Saison 5: épisodes 89-113
-      114,  // Saison 6: épisodes 114-138
-      139   // Saison 7: épisodes 139-159
-    ],
-    'attack-on-titan': [
-      1,    // Saison 1: épisodes 1-25
-      26,   // Saison 2: épisodes 26-37
-      38,   // Saison 3: épisodes 38-59
-      60    // Saison 4: épisodes 60-75
-    ],
-    'demon-slayer': [
-      1,    // Saison 1: épisodes 1-26
-      27,   // Film Mugen Train: épisodes 27-37
-      38    // Saison 2: épisodes 38-48
-    ],
-    'jujutsu-kaisen': [
-      1,    // Saison 1: épisodes 1-24
-      25    // Saison 2: épisodes 25-47
-    ]
-  };
-
-  if (seasonStartDatabase[animeId] && seasonStartDatabase[animeId][seasonNumber - 1]) {
-    return seasonStartDatabase[animeId][seasonNumber - 1];
+// Système universel de calcul automatique des épisodes de départ
+function getSeasonStartEpisode(animeId: string, seasonNumber: number, animeDetails: any): number {
+  // Si c'est la première saison, commencer à 1
+  if (seasonNumber === 1) {
+    return 1;
   }
 
-  // Par défaut: calcul simple pour les animes non mappés
-  return 1 + (seasonNumber - 1) * 12;
+  // Calculer automatiquement en sommant les épisodes des saisons précédentes
+  let totalEpisodes = 0;
+  
+  for (let i = 0; i < seasonNumber - 1; i++) {
+    if (animeDetails.seasons[i]) {
+      totalEpisodes += animeDetails.seasons[i].episodeCount;
+    } else {
+      // Si on n'a pas les données, estimer 12 épisodes par saison
+      totalEpisodes += 12;
+    }
+  }
+  
+  return totalEpisodes + 1;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -97,9 +65,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Générer les épisodes pour cette saison avec vraie numérotation globale
     console.log(`Generating episodes for: ${animeId} - Season ${targetSeason.number}`);
     
-    // Calculer le numéro d'épisode de départ pour cette saison
-    const startEpisode = getSeasonStartEpisode(animeId, targetSeason.number);
-    console.log(`Season ${targetSeason.number} starts at episode ${startEpisode}`);
+    // Calculer automatiquement le numéro d'épisode de départ pour cette saison
+    const startEpisode = getSeasonStartEpisode(animeId, targetSeason.number, animeDetails);
+    console.log(`Universal calculation: Season ${targetSeason.number} starts at episode ${startEpisode}`);
     
     const episodes = [];
     for (let i = 0; i < targetSeason.episodeCount; i++) {
