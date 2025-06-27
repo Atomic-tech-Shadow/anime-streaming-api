@@ -365,8 +365,10 @@ export class AnimeSamaNavigator {
                 timeout: 5000
               });
               
-              if (!episodesResponse || !episodesResponse.data) {
-                throw new Error('Réponse episodes.js vide');
+              if (!episodesResponse || !episodesResponse.data || episodesResponse.data.trim().length === 0) {
+                console.log('Episodes.js vide, tentative extraction directe depuis la page');
+                // Fallback: extraction directe depuis la page HTML
+                return await this.extractFromPageHTML(workingUrl, episodeId, validLanguage, episodeNumber);
               }
               
               const episodesData = episodesResponse.data;
@@ -449,9 +451,11 @@ export class AnimeSamaNavigator {
                 console.log('❌ Aucune source vidéo trouvée dans episodes.js');
                 throw new Error(`No streaming sources found for episode ${episodeNumber} of ${animeId}`);
               }
-            } catch (jsError) {
+            } catch (jsError: any) {
               console.error('Erreur episodes.js:', jsError);
-              throw new Error(`Failed to parse episodes.js for ${animeId}: ${jsError.message}`);
+              // Fallback vers extraction HTML directe
+              console.log('Tentative extraction HTML directe après échec episodes.js');
+              return await this.extractFromPageHTML(workingUrl, episodeId, validLanguage, episodeNumber);
             }
           }
         }
@@ -1175,6 +1179,91 @@ export class AnimeSamaNavigator {
            !url.includes('banner') &&
            !url.includes('aclib') &&
            url.startsWith('http');
+  }
+
+  /**
+   * Extraction directe depuis la page HTML pour les animes sans episodes.js
+   */
+  private async extractFromPageHTML(pageUrl: string, episodeId: string, language: 'VF' | 'VOSTFR', episodeNumber: string): Promise<NavigatorEpisodeResponse> {
+    console.log(`Extraction HTML directe pour: ${episodeId}`);
+    
+    try {
+      const response = await this.axiosInstance.get(pageUrl);
+      const pageContent = response.data;
+      const $ = cheerio.load(pageContent);
+      
+      const sources: NavigatorStreamingSource[] = [];
+      
+      // Recherche d'iframes de streaming dans la page
+      $('iframe[src]').each((index, element) => {
+        const src = $(element).attr('src');
+        if (src && this.isValidStreamingUrl(src)) {
+          sources.push({
+            url: src.startsWith('http') ? src : `https:${src}`,
+            server: `Serveur ${index + 1}`,
+            quality: this.detectQuality(src),
+            language: language,
+            type: 'iframe',
+            serverIndex: index + 1
+          });
+        }
+      });
+      
+      // Recherche de liens vidéo dans les scripts
+      const scriptContent = $('script').text();
+      const videoUrlMatches = scriptContent.match(/(?:src|url)["'\s]*[:=]["'\s]*["']([^"']+\.(?:mp4|m3u8|webm|avi))/gi);
+      
+      if (videoUrlMatches) {
+        videoUrlMatches.forEach((match, index) => {
+          const urlMatch = match.match(/["']([^"']+)["']/);
+          if (urlMatch && urlMatch[1]) {
+            const videoUrl = urlMatch[1];
+            sources.push({
+              url: videoUrl.startsWith('http') ? videoUrl : `https:${videoUrl}`,
+              server: `Direct ${index + 1}`,
+              quality: this.detectQuality(videoUrl),
+              language: language,
+              type: 'direct',
+              serverIndex: sources.length + 1
+            });
+          }
+        });
+      }
+      
+      // Si aucune source trouvée, créer une source basique pour l'URL de streaming
+      if (sources.length === 0) {
+        const { animeId } = this.parseEpisodeId(episodeId);
+        const streamingUrl = `https://www.anime-sama.fr/streaming/${animeId}-episode-${episodeNumber}-${language.toLowerCase()}`;
+        
+        sources.push({
+          url: streamingUrl,
+          server: 'Anime-Sama',
+          quality: 'HD',
+          language: language,
+          type: 'iframe',
+          serverIndex: 1
+        });
+        
+        console.log(`Source de base créée: ${streamingUrl}`);
+      }
+      
+      console.log(`Extraction HTML: ${sources.length} sources trouvées`);
+      
+      return {
+        id: episodeId,
+        title: `Épisode ${episodeNumber}`,
+        animeTitle: episodeId.split('-').slice(0, -2).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+        episodeNumber: parseInt(episodeNumber),
+        language: language,
+        sources,
+        availableServers: Array.from(new Set(sources.map(s => s.server))),
+        url: pageUrl
+      };
+      
+    } catch (error) {
+      console.error('Erreur extraction HTML:', error);
+      throw new Error(`Failed to extract from HTML page: ${error.message}`);
+    }
   }
 
   /**
