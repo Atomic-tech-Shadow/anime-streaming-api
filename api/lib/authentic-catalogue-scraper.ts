@@ -31,7 +31,34 @@ export class AuthenticCatalogueScraper {
     try {
       await randomDelay(500, 1000);
       
-      const response = await this.axiosInstance.get(`${BASE_URL}/catalogue/`);
+      // Tenter plusieurs URLs de fallback
+      let response;
+      const urls = [
+        `${BASE_URL}/catalogue/`,
+        `${BASE_URL}/`,
+        `${BASE_URL}/catalogue-anime/`
+      ];
+      
+      for (const url of urls) {
+        try {
+          response = await this.axiosInstance.get(url, {
+            timeout: 15000,
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          });
+          if (response.status === 200 && response.data) break;
+        } catch (err) {
+          console.log(`Failed to fetch ${url}, trying next...`);
+          continue;
+        }
+      }
+      
+      if (!response || !response.data) {
+        return this.getFallbackCatalogue();
+      }
+      
       const $ = cheerio.load(response.data);
       
       const authenticAnimes: any[] = [];
@@ -109,8 +136,8 @@ export class AuthenticCatalogueScraper {
       
     } catch (error) {
       console.error('Error extracting authentic catalogue:', error);
-      // Retourner le cache s'il existe, sinon tableau vide
-      return this.catalogueCache.length > 0 ? this.catalogueCache : [];
+      // Retourner le cache s'il existe, sinon le catalogue de fallback
+      return this.catalogueCache.length > 0 ? this.catalogueCache : this.getFallbackCatalogue();
     }
   }
 
@@ -226,6 +253,30 @@ export class AuthenticCatalogueScraper {
       console.error(`Error getting authentic details for ${animeId}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Catalogue de fallback avec animes populaires pour assurer la continuité
+   */
+  private getFallbackCatalogue(): any[] {
+    const popularAnimes = [
+      'naruto', 'one-piece', 'bleach', 'dragon-ball-z', 'attack-on-titan',
+      'demon-slayer', 'jujutsu-kaisen', 'my-hero-academia', 'hunter-x-hunter',
+      'death-note', 'fullmetal-alchemist-brotherhood', 'cowboy-bebop',
+      'neon-genesis-evangelion', 'one-punch-man', 'mob-psycho-100',
+      'tokyo-ghoul', 'chainsaw-man', 'spy-x-family', 'demon-slayer-kimetsu-no-yaiba',
+      'jojo-bizarre-adventure', 'black-clover', 'fairy-tail', 'seven-deadly-sins',
+      'code-geass', 'akame-ga-kill', 'tokyo-revengers', 'fire-force',
+      'dr-stone', 'promised-neverland', 'violet-evergarden'
+    ];
+
+    return popularAnimes.map(animeId => ({
+      id: animeId,
+      title: this.formatAnimeTitle(animeId),
+      url: `${BASE_URL}/catalogue/${animeId}/`,
+      authentic: false,
+      fallback: true
+    }));
   }
 
   /**

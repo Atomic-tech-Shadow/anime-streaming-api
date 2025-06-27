@@ -76,7 +76,9 @@ export function createAxiosInstance(sessionCookies?: string): AxiosInstance {
   
   const instance = axios.create({
     baseURL: BASE_URL,
-    timeout: 25000,
+    timeout: 30000,
+    maxRedirects: 3,
+    validateStatus: (status) => status < 500, // Accepter les redirections
     headers: {
       'User-Agent': userAgent,
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -89,7 +91,10 @@ export function createAxiosInstance(sessionCookies?: string): AxiosInstance {
       'Sec-Fetch-Dest': 'document',
       'Sec-Fetch-Mode': 'navigate',
       'Sec-Fetch-Site': 'none',
-      'Sec-Fetch-User': '?1'
+      'Sec-Fetch-User': '?1',
+      'Sec-CH-UA': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+      'Sec-CH-UA-Mobile': '?0',
+      'Sec-CH-UA-Platform': '"Windows"'
     }
   });
 
