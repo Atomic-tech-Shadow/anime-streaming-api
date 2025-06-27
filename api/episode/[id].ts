@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess } from '../lib/core';
 import { animeSamaNavigator } from '../lib/anime-sama-navigator';
+import { videoSourceExtractor } from '../lib/video-source-extractor';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -39,10 +40,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return sendError(res, 404, 'Episode not found', { episodeId });
     }
 
-    return sendSuccess(res, episodeData, {
+    // Extraire les vraies sources vidéo lisibles pour chaque source
+    const enhancedSources = [];
+    for (const source of episodeData.sources) {
+      if (source.url.includes('anime-sama.fr/streaming/')) {
+        // Extraire les vraies sources vidéo depuis cette page
+        const realSources = await videoSourceExtractor.extractRealVideoSources(source.url, source.language);
+        enhancedSources.push(...realSources);
+      } else {
+        // Garder les sources déjà valides
+        enhancedSources.push(source);
+      }
+    }
+
+    // Mettre à jour les données avec les vraies sources vidéo
+    const enhancedEpisodeData = {
+      ...episodeData,
+      sources: enhancedSources.length > 0 ? enhancedSources : episodeData.sources,
+      availableServers: enhancedSources.length > 0 ? 
+        Array.from(new Set(enhancedSources.map(s => s.server))) : 
+        episodeData.availableServers
+    };
+
+    return sendSuccess(res, enhancedEpisodeData, {
       episodeId,
       source: 'anime-sama.fr',
-      authentic: true
+      authentic: true,
+      realVideoSources: enhancedSources.length > 0
     });
 
   } catch (error: any) {

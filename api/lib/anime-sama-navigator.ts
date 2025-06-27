@@ -1230,21 +1230,91 @@ export class AnimeSamaNavigator {
         });
       }
       
-      // Si aucune source trouvée, créer une source basique pour l'URL de streaming
+      // Si aucune source trouvée dans la page, extraire depuis la page de streaming directe
       if (sources.length === 0) {
         const { animeId } = this.parseEpisodeId(episodeId);
         const streamingUrl = `https://www.anime-sama.fr/streaming/${animeId}-episode-${episodeNumber}-${language.toLowerCase()}`;
         
-        sources.push({
-          url: streamingUrl,
-          server: 'Anime-Sama',
-          quality: 'HD',
-          language: language,
-          type: 'iframe',
-          serverIndex: 1
-        });
+        console.log(`Extraction depuis page streaming: ${streamingUrl}`);
         
-        console.log(`Source de base créée: ${streamingUrl}`);
+        try {
+          const streamingResponse = await this.axiosInstance.get(streamingUrl, {
+            headers: { 'Referer': pageUrl }
+          });
+          
+          const streamingContent = streamingResponse.data;
+          const $streaming = cheerio.load(streamingContent);
+          
+          // Recherche d'iframes vidéo dans la page de streaming
+          $streaming('iframe[src]').each((index, element) => {
+            const src = $streaming(element).attr('src');
+            if (src && this.isValidStreamingUrl(src)) {
+              sources.push({
+                url: src.startsWith('http') ? src : `https:${src}`,
+                server: `Serveur ${index + 1}`,
+                quality: this.detectQuality(src),
+                language: language,
+                type: 'iframe',
+                serverIndex: index + 1
+              });
+            }
+          });
+          
+          // Recherche de sources vidéo dans les scripts de la page streaming
+          const streamingScripts = $streaming('script').text();
+          const videoMatches = streamingScripts.match(/(https?:\/\/[^\s"']+\.(?:mp4|m3u8|webm))/gi);
+          
+          if (videoMatches) {
+            videoMatches.forEach((videoUrl, index) => {
+              sources.push({
+                url: videoUrl,
+                server: `Direct ${index + 1}`,
+                quality: this.detectQuality(videoUrl),
+                language: language,
+                type: 'direct',
+                serverIndex: sources.length + 1
+              });
+            });
+          }
+          
+          // Recherche de serveurs populaires
+          const serverPatterns = [
+            /(?:sibnet|vidmoly|sendvid|doodstream|mixdrop|uqload)\.(?:com|ru|to)\/[^"'\s]+/gi,
+            /(?:streamtape|streamlare)\.com\/[^"'\s]+/gi
+          ];
+          
+          serverPatterns.forEach(pattern => {
+            const matches = streamingContent.match(pattern);
+            if (matches) {
+              matches.forEach((match, index) => {
+                if (this.isValidStreamingUrl(match)) {
+                  sources.push({
+                    url: match.startsWith('http') ? match : `https://${match}`,
+                    server: this.identifyServer(match, sources.length + 1),
+                    quality: this.detectQuality(match),
+                    language: language,
+                    type: 'iframe',
+                    serverIndex: sources.length + 1
+                  });
+                }
+              });
+            }
+          });
+          
+          console.log(`Sources extraites de la page streaming: ${sources.length}`);
+          
+        } catch (streamingError) {
+          console.error('Erreur extraction page streaming:', streamingError);
+          // En dernier recours, utiliser l'URL de la page comme iframe
+          sources.push({
+            url: streamingUrl,
+            server: 'Anime-Sama',
+            quality: 'HD',
+            language: language,
+            type: 'iframe',
+            serverIndex: 1
+          });
+        }
       }
       
       console.log(`Extraction HTML: ${sources.length} sources trouvées`);
