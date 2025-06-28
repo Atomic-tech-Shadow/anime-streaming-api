@@ -2,6 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders, checkRateLimit, getClientIP, sendError, sendSuccess } from '../lib/core';
 import { animeSamaNavigator } from '../lib/anime-sama-navigator';
 import { videoSourceExtractor } from '../lib/video-source-extractor';
+import { smartAnimeDetector } from '../lib/smart-anime-detector';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -32,9 +33,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return sendError(res, 400, 'Valid episode ID is required');
     }
 
-    console.log(`Real episode request: ${episodeId}`);
+    console.log(`🔍 Episode request intelligent: ${episodeId}`);
     
-    const episodeData = await animeSamaNavigator.getEpisodeStreaming(episodeId);
+    // Extraire l'anime et l'épisode du format "anime-name-episode-language"
+    const parts = episodeId.split('-');
+    const episodeNumber = parts.find(part => /^\d+$/.test(part));
+    const language = parts[parts.length - 1];
+    const animeName = parts.slice(0, parts.indexOf(episodeNumber)).join('-');
+    
+    if (!animeName || !episodeNumber || !language) {
+      return sendError(res, 400, 'Invalid episode format. Expected: anime-name-episode-language');
+    }
+    
+    console.log(`📝 Analysé: anime="${animeName}", épisode=${episodeNumber}, langue=${language}`);
+    
+    // Détecter intelligemment l'anime
+    const animeMatch = await smartAnimeDetector.detectAnime(animeName);
+    
+    if (!animeMatch) {
+      return sendError(res, 404, `Anime "${animeName}" not found on anime-sama.fr`);
+    }
+    
+    console.log(`✅ Anime détecté: "${animeMatch.originalName}" → "${animeMatch.id}" (confiance: ${animeMatch.confidence})`);
+    
+    // Construire l'ID épisode avec le vrai ID détecté
+    const detectedEpisodeId = `${animeMatch.id}-${episodeNumber}-${language}`;
+    
+    const episodeData = await animeSamaNavigator.getEpisodeStreaming(detectedEpisodeId);
     
     if (!episodeData) {
       return sendError(res, 404, 'Episode not found', { episodeId });
