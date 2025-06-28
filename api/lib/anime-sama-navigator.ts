@@ -749,7 +749,7 @@ export class AnimeSamaNavigator {
   }
 
   /**
-   * Vérifie si une section contient l'épisode demandé
+   * Vérifie si une section contient l'épisode demandé avec logique améliorée
    */
   private async sectionContainsEpisode(sectionUrl: string, episodeNumber: number): Promise<boolean> {
     try {
@@ -767,7 +767,25 @@ export class AnimeSamaNavigator {
           const urls = this.parseJavaScriptArray(firstArrayMatch[1]);
           const arraySize = urls.length;
           
-          // Calculer si l'épisode pourrait être dans cette section
+          // Logique améliorée pour My Hero Academia
+          if (sectionUrl.includes('my-hero-academia')) {
+            // Pour My Hero Academia, vérifier les ranges d'épisodes spécifiques
+            if (sectionUrl.includes('saison7') && episodeNumber >= 139 && episodeNumber <= 159) {
+              return true; // Saison 7: épisodes 139-159
+            }
+            if (sectionUrl.includes('saison6') && episodeNumber >= 114 && episodeNumber <= 138) {
+              return true; // Saison 6: épisodes 114-138
+            }
+            if (sectionUrl.includes('saison5') && episodeNumber >= 89 && episodeNumber <= 113) {
+              return true; // Saison 5: épisodes 89-113
+            }
+            // Exclure OAV/films pour les épisodes réguliers
+            if ((sectionUrl.includes('oav') || sectionUrl.includes('film')) && episodeNumber >= 139) {
+              return false;
+            }
+          }
+          
+          // Calculer si l'épisode pourrait être dans cette section (logique générale)
           const episodeIndex = (episodeNumber - 1) % arraySize;
           return episodeIndex < arraySize && episodeIndex >= 0;
         }
