@@ -658,6 +658,11 @@ export class AnimeSamaNavigator {
       return this.buildMyHeroAcademiaUrls(episodeNumber, lang);
     }
     
+    // Configuration spécifique pour One Piece (correction du bug saison 11)
+    if (animeId === 'one-piece') {
+      return this.buildOnePieceUrls(episodeNumber, lang);
+    }
+    
     try {
       // Utilisation directe des URLs connues basées sur la structure réelle d'anime-sama.fr
       if (animeId === 'naruto') {
@@ -711,6 +716,69 @@ export class AnimeSamaNavigator {
   /**
    * Configuration spécifique pour My Hero Academia avec mapping correct des saisons
    */
+  /**
+   * Configuration spécifique pour One Piece
+   */
+  private buildOnePieceUrls(episodeNumber: number, lang: string): string[] {
+    const urls: string[] = [];
+    
+    // Mapping One Piece par sagas/saisons avec les vrais nombres d'épisodes
+    if (episodeNumber >= 1087) {
+      // Saison 11 (épisodes 1087-1122)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison11/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison11 (1087-1122)`);
+    } else if (episodeNumber >= 1051) {
+      // Saison 10 (épisodes 1051-1086)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison10/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison10 (1051-1086)`);
+    } else if (episodeNumber >= 958) {
+      // Saison 9 (épisodes 958-1050)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison9/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison9 (958-1050)`);
+    } else if (episodeNumber >= 892) {
+      // Saison 8 (épisodes 892-957)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison8/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison8 (892-957)`);
+    } else if (episodeNumber >= 780) {
+      // Saison 7 (épisodes 780-891)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison7/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison7 (780-891)`);
+    } else if (episodeNumber >= 629) {
+      // Saison 6 (épisodes 629-779)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison6/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison6 (629-779)`);
+    } else if (episodeNumber >= 517) {
+      // Saison 5 (épisodes 517-628)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison5/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison5 (517-628)`);
+    } else if (episodeNumber >= 326) {
+      // Saison 4 (épisodes 326-516)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison4/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison4 (326-516)`);
+    } else if (episodeNumber >= 207) {
+      // Saison 3 (épisodes 207-325)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison3/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison3 (207-325)`);
+    } else if (episodeNumber >= 78) {
+      // Saison 2 (épisodes 78-206)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison2/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison2 (78-206)`);
+    } else {
+      // Saison 1 (épisodes 1-77)
+      urls.push(`${this.baseUrl}/catalogue/one-piece/saison1/${lang}`);
+      console.log(`🎯 One Piece EP${episodeNumber} → saison1 (1-77)`);
+    }
+    
+    // Fallback URLs pour One Piece
+    urls.push(
+      `${this.baseUrl}/catalogue/one-piece/film/${lang}`,
+      `${this.baseUrl}/catalogue/one-piece/oav/${lang}`,
+      `${this.baseUrl}/catalogue/one-piece/${lang}`
+    );
+    
+    return urls;
+  }
+
   private buildMyHeroAcademiaUrls(episodeNumber: number, lang: string): string[] {
     const urls: string[] = [];
     
