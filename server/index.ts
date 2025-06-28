@@ -193,11 +193,22 @@ const server = createServer(async (req, res) => {
     }
 
     else if (pathname === '/api' || pathname === '/api/') {
-      const { default: handler } = await import('../api/index.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler index:', error);
-        throw error;
-      });
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ 
+        message: 'API Anime Sama - Endpoints Documentés',
+        endpoints: [
+          '/api/search',
+          '/api/trending', 
+          '/api/anime/[id]',
+          '/api/seasons/[animeId]',
+          '/api/episodes/[animeId]',
+          '/api/seasons',
+          '/api/episode/[id]',
+          '/api/embed/'
+        ],
+        documentation: 'Voir documentation complète des endpoints'
+      }));
     }
     // Servir les fichiers statiques depuis le dossier public
     else if (pathname === '/' || pathname.startsWith('/public/') || pathname.endsWith('.html') || pathname.endsWith('.js') || pathname.endsWith('.css')) {
