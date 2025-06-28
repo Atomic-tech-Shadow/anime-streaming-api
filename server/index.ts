@@ -354,7 +354,7 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(parseInt(PORT.toString()), '0.0.0.0', () => {
-  console.log(`🚀 API Anime Sama démarrée sur http://0.0.0.0:${PORT}`);
+  console.log(`🚀 API Anime Sama démarrée sur par shadow http://0.0.0.0:${PORT}`);
   console.log(`🔍 Test: http://0.0.0.0:${PORT}/api/health`);
 });
 
