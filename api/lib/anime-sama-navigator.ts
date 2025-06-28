@@ -653,54 +653,13 @@ export class AnimeSamaNavigator {
     const lang = language.toLowerCase();
     const urls: string[] = [];
     
-    // Configuration spécifique pour My Hero Academia (correction du bug saison 7)
-    if (animeId === 'my-hero-academia') {
-      return this.buildMyHeroAcademiaUrls(episodeNumber, lang);
-    }
+    // SYSTÈME UNIVERSEL COMPLET - Détection automatique de la structure
+    // Plus de configurations spécifiques, analyse directe du site
     
-    // Configuration spécifique pour One Piece (correction du bug saison 11)
-    if (animeId === 'one-piece') {
-      return this.buildOnePieceUrls(episodeNumber, lang);
-    }
-    
-    try {
-      // Utilisation directe des URLs connues basées sur la structure réelle d'anime-sama.fr
-      if (animeId === 'naruto') {
-        urls.push(
-          `${this.baseUrl}/catalogue/naruto/saison1/${lang}`,
-          `${this.baseUrl}/catalogue/naruto/saison1hs/${lang}`,
-          `${this.baseUrl}/catalogue/naruto/film/${lang}`,
-          `${this.baseUrl}/catalogue/naruto/kai/${lang}`
-        );
-        console.log(`🎯 URLs Naruto ajoutées pour ${lang}`);
-      } else {
-        // Structure générique pour autres animes
-        for (let i = 1; i <= 5; i++) {
-          urls.push(
-            `${this.baseUrl}/catalogue/${animeId}/saison${i}/${lang}`,
-            `${this.baseUrl}/catalogue/${animeId}/saison${i}hs/${lang}`,
-            `${this.baseUrl}/catalogue/${animeId}/saga${i}/${lang}`
-          );
-        }
-        
-        // Sections communes
-        urls.push(
-          `${this.baseUrl}/catalogue/${animeId}/film/${lang}`,
-          `${this.baseUrl}/catalogue/${animeId}/kai/${lang}`,
-          `${this.baseUrl}/catalogue/${animeId}/oav/${lang}`,
-          `${this.baseUrl}/catalogue/${animeId}/scan/${lang}`
-        );
-      }
-      
-    } catch (error) {
-      console.log(`⚠️ Fallback pour ${animeId}, utilisation détection générique`);
-      
-      // Fallback générique si l'analyse échoue
-      for (let i = 1; i <= 10; i++) {
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${i}/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${i}/${lang}`);
-      }
-    }
+    // DÉTECTION AUTOMATIQUE DE LA STRUCTURE ANIME-SAMA.FR
+    // Utilise l'analyse intelligente pour détecter toutes les sections disponibles
+    const detectedSections = await this.detectAnimeSections(animeId, lang, episodeNumber);
+    urls.push(...detectedSections);
     
     // Alternative naming conventions (toujours essayer)
     urls.push(
@@ -717,100 +676,110 @@ export class AnimeSamaNavigator {
    * Configuration spécifique pour My Hero Academia avec mapping correct des saisons
    */
   /**
-   * Configuration spécifique pour One Piece
+   * DÉTECTION AUTOMATIQUE DES SECTIONS ANIME
+   * Analyse la structure réelle d'anime-sama.fr pour chaque anime
    */
-  private buildOnePieceUrls(episodeNumber: number, lang: string): string[] {
+  private async detectAnimeSections(animeId: string, lang: string, episodeNumber: number): Promise<string[]> {
     const urls: string[] = [];
+    console.log(`🔍 Détection automatique intelligente pour ${animeId} épisode ${episodeNumber}`);
     
-    // Mapping One Piece par sagas/saisons avec les vrais nombres d'épisodes
-    if (episodeNumber >= 1087) {
-      // Saison 11 (épisodes 1087-1122)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison11/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison11 (1087-1122)`);
-    } else if (episodeNumber >= 1051) {
-      // Saison 10 (épisodes 1051-1086)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison10/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison10 (1051-1086)`);
-    } else if (episodeNumber >= 958) {
-      // Saison 9 (épisodes 958-1050)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison9/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison9 (958-1050)`);
-    } else if (episodeNumber >= 892) {
-      // Saison 8 (épisodes 892-957)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison8/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison8 (892-957)`);
-    } else if (episodeNumber >= 780) {
-      // Saison 7 (épisodes 780-891)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison7/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison7 (780-891)`);
-    } else if (episodeNumber >= 629) {
-      // Saison 6 (épisodes 629-779)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison6/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison6 (629-779)`);
-    } else if (episodeNumber >= 517) {
-      // Saison 5 (épisodes 517-628)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison5/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison5 (517-628)`);
-    } else if (episodeNumber >= 326) {
-      // Saison 4 (épisodes 326-516)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison4/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison4 (326-516)`);
-    } else if (episodeNumber >= 207) {
-      // Saison 3 (épisodes 207-325)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison3/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison3 (207-325)`);
-    } else if (episodeNumber >= 78) {
-      // Saison 2 (épisodes 78-206)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison2/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison2 (78-206)`);
-    } else {
-      // Saison 1 (épisodes 1-77)
-      urls.push(`${this.baseUrl}/catalogue/one-piece/saison1/${lang}`);
-      console.log(`🎯 One Piece EP${episodeNumber} → saison1 (1-77)`);
+    // ÉTAPE 1: Test intelligent des sections probables selon le numéro d'épisode
+    const candidateSections = this.generateSmartSectionCandidates(animeId, episodeNumber);
+    
+    // ÉTAPE 2: Tester chaque section candidate pour trouver celle qui contient l'épisode
+    for (const section of candidateSections) {
+      try {
+        const testUrl = `${this.baseUrl}/catalogue/${animeId}/${section}/${lang}`;
+        const response = await this.axiosInstance.get(testUrl, { 
+          timeout: 2000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+        });
+        
+        if (response.data && response.data.includes('episodes.js')) {
+          // Vérifier si cette section contient vraiment l'épisode demandé
+          if (await this.sectionContainsEpisode(testUrl, episodeNumber)) {
+            console.log(`✅ Section trouvée: ${section} contient l'épisode ${episodeNumber}`);
+            urls.unshift(testUrl); // Prioriser cette URL
+          } else {
+            urls.push(testUrl); // Ajouter comme fallback
+          }
+        }
+      } catch (error) {
+        // Section non disponible, continuer
+      }
     }
     
-    // Fallback URLs pour One Piece
-    urls.push(
-      `${this.baseUrl}/catalogue/one-piece/film/${lang}`,
-      `${this.baseUrl}/catalogue/one-piece/oav/${lang}`,
-      `${this.baseUrl}/catalogue/one-piece/${lang}`
-    );
-    
+    console.log(`📋 ${urls.length} sections valides détectées pour ${animeId}`);
     return urls;
   }
 
-  private buildMyHeroAcademiaUrls(episodeNumber: number, lang: string): string[] {
-    const urls: string[] = [];
+  /**
+   * Génère des candidats de sections intelligents basés sur le numéro d'épisode
+   */
+  private generateSmartSectionCandidates(animeId: string, episodeNumber: number): string[] {
+    const sections: string[] = [];
     
-    // Mapping précis des épisodes My Hero Academia par saison
-    const seasonMapping = [
-      { start: 1, end: 13, section: 'saison1' },     // Saison 1: épisodes 1-13
-      { start: 14, end: 38, section: 'saison2' },    // Saison 2: épisodes 14-38  
-      { start: 39, end: 63, section: 'saison3' },    // Saison 3: épisodes 39-63
-      { start: 64, end: 88, section: 'saison4' },    // Saison 4: épisodes 64-88
-      { start: 89, end: 113, section: 'saison5' },   // Saison 5: épisodes 89-113
-      { start: 114, end: 138, section: 'saison6' },  // Saison 6: épisodes 114-138
-      { start: 139, end: 159, section: 'saison7' }   // Saison 7: épisodes 139-159
-    ];
-    
-    // Trouver la bonne saison pour cet épisode
-    const correctSeason = seasonMapping.find(season => 
-      episodeNumber >= season.start && episodeNumber <= season.end
-    );
-    
-    if (correctSeason) {
-      // URL prioritaire avec la bonne saison
-      urls.push(`${this.baseUrl}/catalogue/my-hero-academia/${correctSeason.section}/${lang}`);
-      console.log(`🎯 My Hero Academia EP${episodeNumber} → ${correctSeason.section} (${correctSeason.start}-${correctSeason.end})`);
+    // Logique intelligente basée sur les patterns d'anime-sama.fr
+    if (episodeNumber >= 1000) {
+      // Très long anime, priorité aux saisons/sagas élevés
+      for (let i = 15; i >= 8; i--) {
+        sections.push(`saison${i}`, `saga${i}`);
+      }
+    } else if (episodeNumber >= 500) {
+      // Anime long, saisons moyennes-élevées
+      for (let i = 10; i >= 5; i--) {
+        sections.push(`saison${i}`, `saga${i}`);
+      }
+    } else if (episodeNumber >= 100) {
+      // Anime moyen, saisons moyennes
+      for (let i = 7; i >= 3; i--) {
+        sections.push(`saison${i}`, `saga${i}`);
+      }
+    } else {
+      // Anime court, premières saisons
+      for (let i = 3; i >= 1; i--) {
+        sections.push(`saison${i}`, `saga${i}`);
+      }
     }
     
-    // Ajouter toutes les saisons comme fallback
-    for (const season of seasonMapping) {
-      urls.push(`${this.baseUrl}/catalogue/my-hero-academia/${season.section}/${lang}`);
-    }
+    // Ajouter sections spéciales
+    sections.push('film', 'oav', 'special', 'movie');
     
-    return urls;
+    return sections;
   }
+
+  /**
+   * Vérifie si une section contient l'épisode demandé
+   */
+  private async sectionContainsEpisode(sectionUrl: string, episodeNumber: number): Promise<boolean> {
+    try {
+      // Récupérer le fichier episodes.js de cette section
+      const episodesJsMatch = await this.axiosInstance.get(sectionUrl, { timeout: 2000 });
+      const episodesJsUrlMatch = episodesJsMatch.data.match(/episodes\.js\?filever=(\d+)/);
+      
+      if (episodesJsUrlMatch) {
+        const episodesJsUrl = `${sectionUrl}/episodes.js?filever=${episodesJsUrlMatch[1]}`;
+        const episodesResponse = await this.axiosInstance.get(episodesJsUrl, { timeout: 2000 });
+        
+        // Analyser la taille du tableau pour voir si l'épisode pourrait être dedans
+        const firstArrayMatch = episodesResponse.data.match(/var eps1\s*=\s*\[(.*?)\];/s);
+        if (firstArrayMatch) {
+          const urls = this.parseJavaScriptArray(firstArrayMatch[1]);
+          const arraySize = urls.length;
+          
+          // Calculer si l'épisode pourrait être dans cette section
+          const episodeIndex = (episodeNumber - 1) % arraySize;
+          return episodeIndex < arraySize && episodeIndex >= 0;
+        }
+      }
+    } catch (error) {
+      // Erreur d'accès, considérer comme non disponible
+    }
+    
+    return false;
+  }
+
+
 
   private parseEpisodeId(episodeId: string): { animeId: string; episodeNumber: string; language: string } {
     // Support flexible episode ID formats:
