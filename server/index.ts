@@ -271,6 +271,20 @@ const server = createServer(async (req, res) => {
         throw error;
       });
     }
+    else if (pathname === '/api/analyze-site') {
+      const { default: handler } = await import('../api/analyze-site.ts');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler analyze-site:', error);
+        throw error;
+      });
+    }
+    else if (pathname === '/api/deep-scrape') {
+      const { default: handler } = await import('../api/deep-scrape.ts');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler deep-scrape:', error);
+        throw error;
+      });
+    }
 
     else if (pathname === '/api' || pathname === '/api/') {
       const { default: handler } = await import('../api/index.ts');
