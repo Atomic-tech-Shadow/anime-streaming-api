@@ -1,0 +1,138 @@
+📋 DOCUMENTATION COMPLÈTE DES ENDPOINTS ANIME
+==============================================
+
+Configuration API de base : https://api-anime-sama.onrender.com
+
+🔍 ENDPOINTS DE RECHERCHE ET CATALOGUE
+======================================
+
+1. /api/search
+   Méthode     : GET
+   Paramètres  : ?query=terme_recherche (requis)
+   Description : Recherche d'animes par nom/titre
+   Exemple     : /api/search?query=naruto
+   Retour      : Liste d'animes correspondant à la recherche
+   API cible   : https://api-anime-sama.onrender.com/api/search
+
+2. /api/trending  
+   Méthode     : GET
+   Paramètres  : Aucun
+   Description : Récupère les animes populaires/tendances du moment
+   Exemple     : /api/trending
+   Retour      : Liste des animes en tendance
+   API cible   : https://api-anime-sama.onrender.com/api/trending
+
+📺 ENDPOINTS D'INFORMATIONS ANIME
+=================================
+
+3. /api/anime/:id
+   Méthode     : GET
+   Paramètres  : id = identifiant unique de l'anime
+   Description : Détails complets d'un anime (titre, description, saisons, synopsis, etc.)
+   Exemple     : /api/anime/chainsaw-man
+   Retour      : Objet avec toutes les informations de l'anime
+   API cible   : https://api-anime-sama.onrender.com/api/anime/{id}
+
+4. /api/seasons/:animeId
+   Méthode     : GET
+   Paramètres  : animeId = identifiant de l'anime
+   Description : Liste des saisons disponibles pour un anime spécifique
+   Exemple     : /api/seasons/demon-slayer
+   Retour      : Liste des saisons avec leurs métadonnées
+   API cible   : https://api-anime-sama.onrender.com/api/seasons/{animeId}
+
+📖 ENDPOINTS D'ÉPISODES
+=======================
+
+5. /api/episodes/:animeId
+   Méthode     : GET
+   Paramètres  : - animeId = identifiant anime (requis)
+                 - ?season=numéro_saison (requis)
+                 - ?language=VOSTFR|VF (requis)
+   Description : Liste des épisodes pour une saison et langue spécifiques
+   Exemple     : /api/episodes/one-piece?season=1&language=VOSTFR
+   Retour      : Liste des épisodes de la saison demandée
+   API cible   : https://api-anime-sama.onrender.com/api/episodes/{animeId}
+
+6. /api/seasons (ENDPOINT PRINCIPAL)
+   Méthode     : GET
+   Paramètres  : - ?animeId=nom-anime (requis)
+                 - ?season=numéro_saison (requis)  
+                 - ?language=VOSTFR|VF (requis)
+                 - ?server=eps1|eps2|eps3|eps4 (optionnel)
+   Description : Récupère tous les épisodes d'une saison - ENDPOINT PRINCIPAL pour les épisodes
+   Exemple     : /api/seasons?animeId=chainsaw-man&season=1&language=VOSTFR
+   Retour      : Liste complète des épisodes avec métadonnées
+   API cible   : https://api-anime-sama.onrender.com/api/seasons
+   Note        : Plus de système de fallback - API externe uniquement
+
+🎬 ENDPOINTS DE LECTURE VIDÉO
+=============================
+
+7. /api/episode/:episodeId
+   Méthode     : GET
+   Paramètres  : episodeId = identifiant unique de l'épisode
+   Description : Sources de streaming pour un épisode spécifique
+   Exemple     : /api/episode/chainsaw-man-1-vostfr
+   Retour      : Liens de streaming et métadonnées de l'épisode
+   API cible   : https://api-anime-sama.onrender.com/api/episode/{episodeId}
+
+8. /api/episode/:animeId/:seasonNumber/:episodeNumber
+   Méthode     : GET
+   Paramètres  : - animeId = nom de l'anime
+                 - seasonNumber = numéro de la saison
+                 - episodeNumber = numéro de l'épisode
+                 - ?language=VOSTFR|VF (optionnel, défaut: VOSTFR)
+                 - ?server=eps1|eps2|eps3|eps4 (optionnel, défaut: eps1)
+   Description : Sources avec serveurs multiples pour un épisode précis
+   Exemple     : /api/episode/naruto/1/5?language=VOSTFR&server=eps2
+   Retour      : Données de l'épisode avec informations du serveur
+   API cible   : https://api-anime-sama.onrender.com/api/seasons (pour récupérer les données)
+
+9. /api/embed/
+   Méthode     : GET
+   Paramètres  : ?url=lien_video_encode (requis)
+   Description : Page HTML d'intégration sécurisée pour lecteurs vidéo
+   Exemple     : /api/embed/?url=https%3A//anime-sama.fr/catalogue/naruto/
+   Retour      : Page HTML complète avec lecteur intégré
+   Spécialité  : Gère spécifiquement les URLs anime-sama.fr avec message explicatif
+
+⚙️ CONFIGURATION ET COMPORTEMENT
+===============================
+
+API de base configurée :
+const ANIME_API_BASE = 'https://api-anime-sama.onrender.com';
+
+Gestion d'erreurs :
+- Paramètres manquants : Erreur 400 avec message explicite
+- API indisponible : Erreur 500 avec message d'échec
+- Timeout : Gestion automatique par fetch()
+- Plus de fallback : Aucune donnée synthétique générée
+
+Langues supportées :
+- VOSTFR (sous-titres français)
+- VF (version française)
+
+Serveurs de streaming :
+- eps1, eps2, eps3, eps4 (multiples sources par épisode)
+
+📊 FLUX DE DONNÉES TYPIQUE
+==========================
+
+1. Recherche        → /api/search?query=nom_anime
+2. Détails anime    → /api/anime/anime-id
+3. Liste saisons    → /api/seasons/anime-id
+4. Épisodes saison  → /api/seasons?animeId=anime-id&season=1&language=VOSTFR
+5. Lecture épisode  → /api/embed/?url=lien_episode_encode
+
+🚨 CHANGEMENTS RÉCENTS
+======================
+
+- SUPPRESSION COMPLÈTE du système de fallback local
+- Plus de génération d'épisodes fictifs
+- Plus de fonction getEpisodeCountForAnime()
+- API externe uniquement (https://api-anime-sama.onrender.com)
+- Erreurs explicites en cas d'indisponibilité de l'API
+
+Tous les endpoints sont maintenant des proxies purs vers l'API Anime-Sama
+sans aucune donnée de secours ou fallback local.

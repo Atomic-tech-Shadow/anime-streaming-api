@@ -102,186 +102,92 @@ const server = createServer(async (req, res) => {
     const vercelReq = adaptRequest(req);
     const vercelRes = adaptResponse(res);
 
-    // Router pour les différentes endpoints avec gestion d'erreurs
-    if (pathname === '/api/health') {
-      const { default: handler } = await import('../api/health.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler health:', error);
-        throw error;
-      });
-    } 
-    else if (pathname === '/api/status') {
-      const { default: handler } = await import('../api/status.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler status:', error);
+    // Router pour les endpoints documentés uniquement
+    if (pathname === '/api/search') {
+      const { default: handler } = await import('../api/search.js');
+      await handler(vercelReq, vercelRes).catch((error: any) => {
+        console.error('Erreur handler search:', error);
         throw error;
       });
     }
-    else if (pathname === '/api/search') {
-      const { default: handler } = await import('../api/search.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler search:', error);
+    else if (pathname === '/api/trending') {
+      const { default: handler } = await import('../api/trending.js');
+      await handler(vercelReq, vercelRes).catch((error: any) => {
+        console.error('Erreur handler trending:', error);
         throw error;
       });
     }
     else if (pathname.startsWith('/api/anime/')) {
       const id = pathname.split('/')[3];
       vercelReq.query = { ...vercelReq.query, id };
-      const { default: handler } = await import('../api/anime/[id].ts');
-      await handler(vercelReq, vercelRes).catch(error => {
+      const { default: handler } = await import('../api/anime/[id].js');
+      await handler(vercelReq, vercelRes).catch((error: any) => {
         console.error('Erreur handler anime:', error);
-        throw error;
-      });
-    }
-    else if (pathname.startsWith('/api/episode/')) {
-      const id = pathname.split('/')[3];
-      vercelReq.query = { ...vercelReq.query, id };
-      const { default: handler } = await import('../api/episode/[id].ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler episode:', error);
-        throw error;
-      });
-    }
-    else if (pathname.startsWith('/api/film/')) {
-      const id = pathname.split('/')[3];
-      vercelReq.query = { ...vercelReq.query, id };
-      const { default: handler } = await import('../api/film/[id].ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler film:', error);
-        throw error;
-      });
-    }
-    else if (pathname.startsWith('/api/embed/')) {
-      const episodeId = pathname.split('/')[3];
-      vercelReq.query = { ...vercelReq.query, episodeId };
-      const { default: handler } = await import('../api/embed/[episodeId].ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler embed:', error);
-        throw error;
-      });
-    }
-    else if (pathname.startsWith('/api/proxy/')) {
-      const url = pathname.split('/api/proxy/')[1];
-      vercelReq.query = { ...vercelReq.query, url };
-      const { default: handler } = await import('../api/proxy/[url].ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler proxy:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/trending') {
-      const { default: handler } = await import('../api/trending.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler trending:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/catalogue') {
-      const { default: handler } = await import('../api/catalogue.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler catalogue:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/genres') {
-      const { default: handler } = await import('../api/genres.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler genres:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/random') {
-      const { default: handler } = await import('../api/random.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler random:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/advanced-search') {
-      const { default: handler } = await import('../api/advanced-search.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler advanced-search:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/analyze-features') {
-      const { default: handler } = await import('../api/analyze-features.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler analyze-features:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/complete-scrape') {
-      const { default: handler } = await import('../api/complete-scrape.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler complete-scrape:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/scrape-status') {
-      const { default: handler } = await import('../api/scrape-status.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler scrape-status:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/seasons') {
-      const { default: handler } = await import('../api/seasons.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler seasons:', error);
         throw error;
       });
     }
     else if (pathname.startsWith('/api/seasons/')) {
       const animeId = pathname.split('/')[3];
       vercelReq.query = { ...vercelReq.query, animeId };
-      const { default: handler } = await import('../api/seasons/[animeId].ts');
-      await handler(vercelReq, vercelRes).catch(error => {
+      const { default: handler } = await import('../api/seasons/[animeId].js');
+      await handler(vercelReq, vercelRes).catch((error: any) => {
         console.error('Erreur handler seasons/animeId:', error);
+        throw error;
+      });
+    }
+    else if (pathname === '/api/seasons') {
+      const { default: handler } = await import('../api/seasons.js');
+      await handler(vercelReq, vercelRes).catch((error: any) => {
+        console.error('Erreur handler seasons:', error);
         throw error;
       });
     }
     else if (pathname.startsWith('/api/episodes/')) {
       const animeId = pathname.split('/')[3];
       vercelReq.query = { ...vercelReq.query, animeId };
-      const { default: handler } = await import('../api/episodes/[animeId].ts');
-      await handler(vercelReq, vercelRes).catch(error => {
+      const { default: handler } = await import('../api/episodes/[animeId].js');
+      await handler(vercelReq, vercelRes).catch((error: any) => {
         console.error('Erreur handler episodes/animeId:', error);
         throw error;
       });
     }
-    else if (pathname === '/api/content') {
-      const { default: handler } = await import('../api/content.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler content:', error);
-        throw error;
-      });
+    else if (pathname.startsWith('/api/episode/')) {
+      // Support des deux formats: /api/episode/:episodeId et /api/episode/:animeId/:seasonNumber/:episodeNumber
+      const pathParts = pathname.split('/').slice(3); // Enlever '', 'api', 'episode'
+      
+      if (pathParts.length === 1) {
+        // Format: /api/episode/:episodeId
+        const episodeId = pathParts[0];
+        vercelReq.query = { ...vercelReq.query, id: episodeId };
+        const { default: handler } = await import('../api/episode/[id].js');
+        await handler(vercelReq, vercelRes).catch((error: any) => {
+          console.error('Erreur handler episode:', error);
+          throw error;
+        });
+      } else if (pathParts.length === 3) {
+        // Format: /api/episode/:animeId/:seasonNumber/:episodeNumber
+        const [animeId, seasonNumber, episodeNumber] = pathParts;
+        vercelReq.query = { 
+          ...vercelReq.query, 
+          animeId, 
+          seasonNumber, 
+          episodeNumber 
+        };
+        const { default: handler } = await import('../api/episode/[id].js');
+        await handler(vercelReq, vercelRes).catch((error: any) => {
+          console.error('Erreur handler episode with params:', error);
+          throw error;
+        });
+      } else {
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'Format d\'URL invalide pour /api/episode' }));
+      }
     }
-    else if (pathname === '/api/content-types') {
-      const { default: handler } = await import('../api/content-types.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler content-types:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/test-universal') {
-      const { default: handler } = await import('../api/test-universal.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler test-universal:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/analyze-site') {
-      const { default: handler } = await import('../api/analyze-site.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler analyze-site:', error);
-        throw error;
-      });
-    }
-    else if (pathname === '/api/deep-scrape') {
-      const { default: handler } = await import('../api/deep-scrape.ts');
-      await handler(vercelReq, vercelRes).catch(error => {
-        console.error('Erreur handler deep-scrape:', error);
+    else if (pathname === '/api/embed/') {
+      const { default: handler } = await import('../api/embed/[episodeId].js');
+      await handler(vercelReq, vercelRes).catch((error: any) => {
+        console.error('Erreur handler embed:', error);
         throw error;
       });
     }
