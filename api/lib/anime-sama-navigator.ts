@@ -655,24 +655,32 @@ export class AnimeSamaNavigator {
     }
     
     try {
-      // Import et utiliser l'analyseur universel pour les autres animes
-      const { universalAnimeAnalyzer } = await import('./universal-anime-analyzer.js');
-      
-      // Analyser la structure de l'anime
-      const structure = await universalAnimeAnalyzer.analyzeAnimeStructure(animeId);
-      
-      // Trouver la saison correspondant à l'épisode
-      const episodeMapping = universalAnimeAnalyzer.findSeasonForEpisode(episodeNumber, structure);
-      
-      if (episodeMapping) {
-        // URL prioritaire basée sur l'analyse
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/${episodeMapping.sectionPath}/${lang}`);
-        console.log(`🎯 Episode ${episodeNumber} → Section: ${episodeMapping.sectionPath}`);
-      }
-      
-      // Ajouter toutes les sections détectées comme fallback
-      for (const season of structure.seasons) {
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/${season.sectionPath}/${lang}`);
+      // Utilisation directe des URLs connues basées sur la structure réelle d'anime-sama.fr
+      if (animeId === 'naruto') {
+        urls.push(
+          `${this.baseUrl}/catalogue/naruto/saison1/${lang}`,
+          `${this.baseUrl}/catalogue/naruto/saison1hs/${lang}`,
+          `${this.baseUrl}/catalogue/naruto/film/${lang}`,
+          `${this.baseUrl}/catalogue/naruto/kai/${lang}`
+        );
+        console.log(`🎯 URLs Naruto ajoutées pour ${lang}`);
+      } else {
+        // Structure générique pour autres animes
+        for (let i = 1; i <= 5; i++) {
+          urls.push(
+            `${this.baseUrl}/catalogue/${animeId}/saison${i}/${lang}`,
+            `${this.baseUrl}/catalogue/${animeId}/saison${i}hs/${lang}`,
+            `${this.baseUrl}/catalogue/${animeId}/saga${i}/${lang}`
+          );
+        }
+        
+        // Sections communes
+        urls.push(
+          `${this.baseUrl}/catalogue/${animeId}/film/${lang}`,
+          `${this.baseUrl}/catalogue/${animeId}/kai/${lang}`,
+          `${this.baseUrl}/catalogue/${animeId}/oav/${lang}`,
+          `${this.baseUrl}/catalogue/${animeId}/scan/${lang}`
+        );
       }
       
     } catch (error) {
