@@ -54,7 +54,8 @@ export class UniversalAnimeAnalyzer {
       console.log(`🧹 Après nettoyage: ${cleanedData.length} caractères`);
       
       // 2. Extraire le titre
-      const $ = require('cheerio').load(response.data);
+      const { load } = await import('cheerio');
+      const $ = load(response.data);
       const title = $('h1, .anime-title').first().text().trim() || 
                    animeId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
       
