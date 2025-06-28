@@ -313,7 +313,11 @@ export class AnimeSamaNavigator {
   public async getEpisodeStreaming(episodeId: string): Promise<NavigatorEpisodeResponse> {
     console.log(`🎬 Épisode: ${episodeId}`);
     
-    const { animeId, episodeNumber, language } = this.parseEpisodeId(episodeId);
+    const { animeId: rawAnimeId, episodeNumber, language } = this.parseEpisodeId(episodeId);
+    
+    // Résoudre l'ID réel de l'anime avec le mapping
+    const { resolveAnimeId } = await import('./anime-id-mapper');
+    const animeId = resolveAnimeId(rawAnimeId);
     
     await randomDelay(800, 1200);
     
