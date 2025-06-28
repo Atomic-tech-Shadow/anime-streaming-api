@@ -700,6 +700,30 @@ export class AnimeSamaNavigator {
         urls.push(`${this.baseUrl}/catalogue/${animeId}/eastblue/${lang}`);
         urls.push(`${this.baseUrl}/catalogue/${animeId}/saison1/${lang}`);
       }
+    } else if (animeId === 'my-hero-academia') {
+      // My Hero Academia specific mapping based on actual episode counts
+      if (episodeNumber >= 139) {
+        // Season 7 (episodes 139-159)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison7/${lang}`);
+      } else if (episodeNumber >= 114) {
+        // Season 6 (episodes 114-138)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison6/${lang}`);
+      } else if (episodeNumber >= 89) {
+        // Season 5 (episodes 89-113)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison5/${lang}`);
+      } else if (episodeNumber >= 64) {
+        // Season 4 (episodes 64-88)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison4/${lang}`);
+      } else if (episodeNumber >= 39) {
+        // Season 3 (episodes 39-63)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison3/${lang}`);
+      } else if (episodeNumber >= 14) {
+        // Season 2 (episodes 14-38)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison2/${lang}`);
+      } else {
+        // Season 1 (episodes 1-13)
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison1/${lang}`);
+      }
     } else {
       // Generic smart section detection for other anime
       if (episodeNumber > 1000) {

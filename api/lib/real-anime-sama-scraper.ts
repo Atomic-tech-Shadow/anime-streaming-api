@@ -321,12 +321,22 @@ export class RealAnimeSamaScraper {
               episodeCount = seasonNumber <= 16 ? 20 : 13;
             }
             
+            // Construire l'URL correcte de la saison basée sur le paramètre seasonParam
+            let seasonUrl = `${BASE_URL}/catalogue/${animeId}/`;
+            if (seasonParam) {
+              // Nettoyer le paramètre de saison pour construire l'URL correcte
+              const cleanParam = seasonParam.replace(/['"]/g, '').trim();
+              if (cleanParam) {
+                seasonUrl = `${BASE_URL}/catalogue/${animeId}/${cleanParam}`;
+              }
+            }
+            
             seasons.push({
               number: seasonNumber,
               name: seasonName,
               languages: ['VF', 'VOSTFR'],
               episodeCount,
-              url: `${BASE_URL}/catalogue/${animeId}/`
+              url: seasonUrl
             });
           }
         });
@@ -360,7 +370,7 @@ export class RealAnimeSamaScraper {
                       name: `Saison ${seasonNumber}`,
                       languages: ['VF', 'VOSTFR'],
                       episodeCount: this.estimateEpisodeCount(animeId, seasonNumber),
-                      url: `${BASE_URL}/catalogue/${animeId}/`
+                      url: `${BASE_URL}/catalogue/${animeId}/saison${seasonNumber}`
                     });
                   }
                 }
@@ -387,7 +397,7 @@ export class RealAnimeSamaScraper {
                 name: buttonText || `Saison ${seasonNumber}`,
                 languages: ['VF', 'VOSTFR'],
                 episodeCount: this.estimateEpisodeCount(animeId, seasonNumber),
-                url: `${BASE_URL}/catalogue/${animeId}/`
+                url: `${BASE_URL}/catalogue/${animeId}/saison${seasonNumber}`
               });
             }
           }

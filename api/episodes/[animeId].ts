@@ -13,7 +13,7 @@ const SEASON_DATABASE: Record<string, {
   totalEpisodes: number;
 }> = {
   'my-hero-academia': {
-    totalEpisodes: 138,
+    totalEpisodes: 159,
     seasons: [
       { number: 1, name: 'Saison 1', episodeCount: 13, startEpisode: 1, languages: ['VF', 'VOSTFR'] },
       { number: 2, name: 'Saison 2', episodeCount: 25, startEpisode: 14, languages: ['VF', 'VOSTFR'] },

@@ -13,7 +13,7 @@ const SEASON_DATABASE: Record<string, {
   totalEpisodes: number;
 }> = {
   'my-hero-academia': {
-    totalEpisodes: 138,
+    totalEpisodes: 159,
     seasons: [
       { number: 1, name: 'Saison 1', episodeCount: 13, startEpisode: 1, languages: ['VF', 'VOSTFR'] },
       { number: 2, name: 'Saison 2', episodeCount: 25, startEpisode: 14, languages: ['VF', 'VOSTFR'] },
@@ -112,7 +112,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    return sendSuccess(res, seasonData, {
+    // Enrichir les données avec les URLs correctes des saisons
+    const seasonsWithUrls = seasonData.seasons.map(season => ({
+      ...season,
+      url: `https://anime-sama.fr/catalogue/${normalizedAnimeId}/saison${season.number}/vostfr`
+    }));
+
+    const enrichedSeasonData = {
+      ...seasonData,
+      seasons: seasonsWithUrls
+    };
+
+    return sendSuccess(res, enrichedSeasonData, {
       animeId: normalizedAnimeId,
       source: 'database',
       authentic: true
