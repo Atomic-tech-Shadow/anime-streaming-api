@@ -264,6 +264,13 @@ const server = createServer(async (req, res) => {
         throw error;
       });
     }
+    else if (pathname === '/api/test-universal') {
+      const { default: handler } = await import('../api/test-universal.ts');
+      await handler(vercelReq, vercelRes).catch(error => {
+        console.error('Erreur handler test-universal:', error);
+        throw error;
+      });
+    }
 
     else if (pathname === '/api' || pathname === '/api/') {
       const { default: handler } = await import('../api/index.ts');

@@ -324,7 +324,7 @@ export class AnimeSamaNavigator {
       const epNum = parseInt(episodeNumber);
       const languageUpper = language.toUpperCase();
       const validLanguage = (languageUpper === 'VF' || languageUpper === 'VOSTFR') ? languageUpper : 'VOSTFR';
-      const possibleUrls = this.buildSmartSectionUrls(animeId, validLanguage, epNum);
+      const possibleUrls = await this.buildUniversalSectionUrls(animeId, validLanguage, epNum);
       
       let workingUrl = null;
       let cleanedData = '';
@@ -645,119 +645,91 @@ export class AnimeSamaNavigator {
   }
 
   // Méthodes utilitaires
-  private buildSmartSectionUrls(animeId: string, language: 'VF' | 'VOSTFR', episodeNumber: number): string[] {
+  private async buildUniversalSectionUrls(animeId: string, language: 'VF' | 'VOSTFR', episodeNumber: number): Promise<string[]> {
     const lang = language.toLowerCase();
     const urls: string[] = [];
     
-    // Specific mapping for One Piece episodes based on actual anime-sama.fr structure
-    if (animeId === 'one-piece') {
-      if (episodeNumber >= 1087) {
-        // Egghead Arc (1087+) - Saga 11
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison11/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga11/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/egghead/${lang}`);
-      } else if (episodeNumber >= 890) {
-        // Wano Country Arc (890-1086)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga10/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/wano/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/pays-des-wa/${lang}`);
-      } else if (episodeNumber >= 747) {
-        // Whole Cake Island Arc (747-889)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga9/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/tougato/${lang}`);
-      } else if (episodeNumber >= 575) {
-        // Dressrosa Arc (575-746)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga8/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/dressrosa/${lang}`);
-      } else if (episodeNumber >= 517) {
-        // Fish-Man Island Arc (517-574)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga7/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/poissons/${lang}`);
-      } else if (episodeNumber >= 385) {
-        // Marineford/War Arc (385-516)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga6/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/guerre/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison6/${lang}`);
-      } else if (episodeNumber >= 326) {
-        // Thriller Bark Arc (326-384)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga5/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/thriller/${lang}`);
-      } else if (episodeNumber >= 207) {
-        // Water Seven Arc (207-325)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga4/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/water7/${lang}`);
-      } else if (episodeNumber >= 136) {
-        // Sky Island Arc (136-206)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga3/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/celeste/${lang}`);
-      } else if (episodeNumber >= 62) {
-        // Alabasta Arc (62-135)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga2/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/alabasta/${lang}`);
-      } else {
-        // East Blue Arc (1-61)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga1/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/eastblue/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison1/${lang}`);
-      }
-    } else if (animeId === 'my-hero-academia') {
-      // My Hero Academia specific mapping based on actual episode counts
-      if (episodeNumber >= 139) {
-        // Season 7 (episodes 139-159)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison7/${lang}`);
-      } else if (episodeNumber >= 114) {
-        // Season 6 (episodes 114-138)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison6/${lang}`);
-      } else if (episodeNumber >= 89) {
-        // Season 5 (episodes 89-113)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison5/${lang}`);
-      } else if (episodeNumber >= 64) {
-        // Season 4 (episodes 64-88)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison4/${lang}`);
-      } else if (episodeNumber >= 39) {
-        // Season 3 (episodes 39-63)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison3/${lang}`);
-      } else if (episodeNumber >= 14) {
-        // Season 2 (episodes 14-38)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison2/${lang}`);
-      } else {
-        // Season 1 (episodes 1-13)
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison1/${lang}`);
-      }
-    } else {
-      // Generic smart section detection for other anime
-      if (episodeNumber > 1000) {
-        const sagaNum = Math.ceil((episodeNumber - 1000) / 100) + 10;
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${sagaNum}/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${Math.ceil(episodeNumber / 200)}/${lang}`);
+    // Configuration spécifique pour My Hero Academia (correction du bug saison 7)
+    if (animeId === 'my-hero-academia') {
+      return this.buildMyHeroAcademiaUrls(episodeNumber, lang);
+    }
+    
+    try {
+      // Import et utiliser l'analyseur universel pour les autres animes
+      const { universalAnimeAnalyzer } = await import('./universal-anime-analyzer.js');
+      
+      // Analyser la structure de l'anime
+      const structure = await universalAnimeAnalyzer.analyzeAnimeStructure(animeId);
+      
+      // Trouver la saison correspondant à l'épisode
+      const episodeMapping = universalAnimeAnalyzer.findSeasonForEpisode(episodeNumber, structure);
+      
+      if (episodeMapping) {
+        // URL prioritaire basée sur l'analyse
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/${episodeMapping.sectionPath}/${lang}`);
+        console.log(`🎯 Episode ${episodeNumber} → Section: ${episodeMapping.sectionPath}`);
       }
       
-      if (episodeNumber > 500) {
-        const sagaNum = Math.ceil(episodeNumber / 100);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${sagaNum}/${lang}`);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${Math.ceil(episodeNumber / 100)}/${lang}`);
+      // Ajouter toutes les sections détectées comme fallback
+      for (const season of structure.seasons) {
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/${season.sectionPath}/${lang}`);
       }
       
-      if (episodeNumber > 100) {
-        const seasonNum = Math.ceil(episodeNumber / 50);
-        urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${seasonNum}/${lang}`);
-      }
+    } catch (error) {
+      console.log(`⚠️ Fallback pour ${animeId}, utilisation détection générique`);
       
-      // Standard season patterns
-      for (let i = 1; i <= 5; i++) {
+      // Fallback générique si l'analyse échoue
+      for (let i = 1; i <= 10; i++) {
         urls.push(`${this.baseUrl}/catalogue/${animeId}/saison${i}/${lang}`);
+        urls.push(`${this.baseUrl}/catalogue/${animeId}/saga${i}/${lang}`);
       }
     }
     
-    // Alternative naming conventions (always try these as fallback)
+    // Alternative naming conventions (toujours essayer)
     urls.push(
       `${this.baseUrl}/catalogue/${animeId}/${lang}`,
       `${this.baseUrl}/catalogue/${animeId}/episodes/${lang}`,
       `${this.baseUrl}/catalogue/${animeId}/vf-vostfr/${lang}`
     );
     
-    // Remove duplicates and return
+    // Supprimer les doublons
     return [...new Set(urls)];
+  }
+
+  /**
+   * Configuration spécifique pour My Hero Academia avec mapping correct des saisons
+   */
+  private buildMyHeroAcademiaUrls(episodeNumber: number, lang: string): string[] {
+    const urls: string[] = [];
+    
+    // Mapping précis des épisodes My Hero Academia par saison
+    const seasonMapping = [
+      { start: 1, end: 13, section: 'saison1' },     // Saison 1: épisodes 1-13
+      { start: 14, end: 38, section: 'saison2' },    // Saison 2: épisodes 14-38  
+      { start: 39, end: 63, section: 'saison3' },    // Saison 3: épisodes 39-63
+      { start: 64, end: 88, section: 'saison4' },    // Saison 4: épisodes 64-88
+      { start: 89, end: 113, section: 'saison5' },   // Saison 5: épisodes 89-113
+      { start: 114, end: 138, section: 'saison6' },  // Saison 6: épisodes 114-138
+      { start: 139, end: 159, section: 'saison7' }   // Saison 7: épisodes 139-159
+    ];
+    
+    // Trouver la bonne saison pour cet épisode
+    const correctSeason = seasonMapping.find(season => 
+      episodeNumber >= season.start && episodeNumber <= season.end
+    );
+    
+    if (correctSeason) {
+      // URL prioritaire avec la bonne saison
+      urls.push(`${this.baseUrl}/catalogue/my-hero-academia/${correctSeason.section}/${lang}`);
+      console.log(`🎯 My Hero Academia EP${episodeNumber} → ${correctSeason.section} (${correctSeason.start}-${correctSeason.end})`);
+    }
+    
+    // Ajouter toutes les saisons comme fallback
+    for (const season of seasonMapping) {
+      urls.push(`${this.baseUrl}/catalogue/my-hero-academia/${season.section}/${lang}`);
+    }
+    
+    return urls;
   }
 
   private parseEpisodeId(episodeId: string): { animeId: string; episodeNumber: string; language: string } {
