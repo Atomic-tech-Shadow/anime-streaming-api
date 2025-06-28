@@ -1331,7 +1331,7 @@ export class AnimeSamaNavigator {
           serverPatterns.forEach(pattern => {
             const matches = streamingContent.match(pattern);
             if (matches) {
-              matches.forEach((match, index) => {
+              matches.forEach((match: string, index: number) => {
                 if (this.isValidStreamingUrl(match)) {
                   sources.push({
                     url: match.startsWith('http') ? match : `https://${match}`,
@@ -1377,7 +1377,7 @@ export class AnimeSamaNavigator {
       
     } catch (error) {
       console.error('Erreur extraction HTML:', error);
-      throw new Error(`Failed to extract from HTML page: ${error.message}`);
+      throw new Error(`Failed to extract from HTML page: ${(error as Error).message}`);
     }
   }
 

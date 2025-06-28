@@ -156,8 +156,6 @@ export class AnimeSamaRealAnalyzer {
     }
     
     return analyzedSections;
-    
-    return sections;
   }
 
   /**

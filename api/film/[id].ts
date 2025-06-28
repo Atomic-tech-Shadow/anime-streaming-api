@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ];
     
     const axiosInstance = createAxiosInstance();
-    let filmSources = [];
+    let filmSources: any[] = [];
     let workingUrl = null;
     
     // Tester chaque URL possible

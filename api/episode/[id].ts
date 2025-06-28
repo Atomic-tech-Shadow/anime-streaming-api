@@ -39,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const parts = episodeId.split('-');
     const episodeNumber = parts.find(part => /^\d+$/.test(part));
     const language = parts[parts.length - 1];
-    const animeName = parts.slice(0, parts.indexOf(episodeNumber)).join('-');
+    const animeName = parts.slice(0, parts.indexOf(episodeNumber!)).join('-');
     
     if (!animeName || !episodeNumber || !language) {
       return sendError(res, 400, 'Invalid episode format. Expected: anime-name-episode-language');
